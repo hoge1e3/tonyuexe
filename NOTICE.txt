@@ -1,0 +1,26 @@
+tonyuedit ver 0.1
+Copyright 2014 hoge1e3[ aqto ]gmail.com
+
+This product includes software developed by
+The Apache Software Foundation (http://www.apache.org/).
+
+== List of depending libraries
+
+lib/commons-codec-1.9.jar
+ URL: http://commons.apache.org/proper/commons-codec/
+
+lib/commons-logging-1.1.1.jar
+ URL: http://commons.apache.org/logging/
+
+lib/jsonic-1.2.7.jar
+ URL: http://jsonic.sourceforge.jp/
+
+lib/rhino_patched.jar
+ URL: http://github.com/hoge1e3/rhino_e4x_patched/
+
+signpost-core-1.2.1.2.jar
+ URL: https://code.google.com/p/oauth-signpost/
+
+src/jp/tonyu/util/MD5.java
+ URL: http://www.syboos.jp/java/doc/md5-algorithm.html
+

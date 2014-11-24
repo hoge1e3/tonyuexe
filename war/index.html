@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!-- The HTML 4.01 Transitional DOCTYPE declaration-->
+<!-- above set at the top of the file will set     -->
+<!-- the browser's rendering engine into           -->
+<!-- "Quirks Mode". Replacing this declaration     -->
+<!-- with a "Standards Mode" doctype is supported, -->
+<!-- but may lead to some differences in layout.   -->
+
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<link rel="shortcut icon" type="image/x-icon" href="images/tnu.ico">
+
+<!-- Bootstrap core CSS -->
+<link href="css/bootstrap.css" rel="stylesheet">
+
+<!-- Custom styles for this template -->
+<link href="css/tonyu.css" rel="stylesheet">
+
+    <title>Tonyu System 2 公開プロジェクト一覧</title>
+    <script src="js/lib/jquery-1.10.1.js"></script>
+    <script src="js/lib/util.js"></script>
+    <script src="js/lib/UI.js"></script>
+    <script>
+    function pad0(n,c) {
+        if (!c) c=2;
+        var res="00000000"+n;
+        return res.substring(res.length-c);
+    }
+    function fmt(d) {
+        return d.getFullYear()+"/"+pad0(d.getMonth()+1)+"/"+pad0(d.getDate())+" "+
+        pad0(d.getHours())+":"+pad0(d.getMinutes());
+    }
+    $(function () {
+        var lbl={
+                mit:"MIT License",
+                gplv3:"GPL License ver3"
+        }
+        $.ajax({
+            type:"get",
+            url:"exe/listPublished",
+            success: function (res) {
+                console.log(res);
+                res.sort(function (a,b) {
+                    var la=a.lastUpdate || 0;
+                    var lb=b.lastUpdate || 0;
+                    return la>lb?-1:la<lb?1:0;
+                });
+                res.forEach(function (r){
+                    var url="exe/"+r.user+"/"+r.project;
+                    var title=(r.title && r.title!="null" ? r.title:r.project);
+                    $("#prjs").append(UI("div",
+                            ["div",
+                             ["a",{href:url,"class":"title"},title],
+                            " by ",r.user,
+                            //["td",r.allowFork],
+                            r.lastUpdate? " at "+fmt(new Date(r.lastUpdate))  :"",
+                            " / License: ",lbl[r.license]||r.license+""  ,
+                                    ],
+                            ["pre",["a", {href:url},["img",{
+                                style:"float:left;padding:10px;",
+                                src:(r.thumbnail?r.thumbnail:"images/nowprint.png")
+                            }]],
+                            (r.description || "")],
+                            ["div",{style:"clear:left;"}]
+
+                    ));
+                });
+            }
+        });
+    });
+    </script>
+  </head>
+
+  <body class="exe">
+    <h1>Tonyu System 2 公開プロジェクト一覧</h1>
+
+    <div id=prjs></div>
+  </body>
+</html>
