@@ -136,6 +136,9 @@
     Shell.setout=function (ui) {
         Shell.outUI=ui;
     };
+    Shell.upload=function (cont,file) {
+        resolve(file).text(cont);
+    };
     Shell.echo=function () {
         console.log.apply(console,arguments);
         if (Shell.outUI && Shell.outUI.log) Shell.outUI.log.apply(Shell.outUI,arguments);

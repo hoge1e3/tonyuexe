@@ -110,8 +110,10 @@ exports.LS2FileSync=function(req, resp){
 		var dst=basef.rel(path);
 		console.log(path+"->"+dst);
 		if (dst.isDir()) continue;
-		console.log("setMeta dst="+dst+" o="+o+" path="+path);
-		if (o.trashed && dst.exists()) {
+		console.log("setMeta dst="+dst+" path="+path);
+		if (typeof o=="string") {
+		    dst.text(o);
+		} else if (o.trashed && dst.exists()) {
 			dst.trash();
 		} else {
 			dst.textMeta(o.text, o);
