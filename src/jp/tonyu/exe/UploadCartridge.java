@@ -65,32 +65,10 @@ public class UploadCartridge implements ServletCartridge {
                     ));
             return true;
         }
-        if (u.startsWith("/"+UploadClient.URL_PRJ_INFO)) {
-            return getProjectInfo(req, resp);
-        }
 
         return false;
     }
-    public boolean getProjectInfo(HttpServletRequest req,
-            HttpServletResponse resp) throws IOException {
-        String user=req.getParameter(UploadClient.PARAM_USR);
-        String prj=req.getParameter(UploadClient.PARAM_PRJ);
-        String chk=req.getParameter(UploadClient.PARAM_CHK);
-        if (sgn.chk(user+prj,chk)) {
-            EQ e=ProjectInfo.get(user, prj, false);
-            Map<String,String> res=new HashMap<String,String>();
-            res.put(ProjectInfo.KEY_ALLOW_FORK, e.attr(ProjectInfo.KEY_ALLOW_FORK)+""  );
-            res.put(ProjectInfo.KEY_LICENSE, e.attr(ProjectInfo.KEY_LICENSE)+""  );
-            res.put(ProjectInfo.KEY_PUBLIST, e.attr(ProjectInfo.KEY_PUBLIST)+""  );
-            res.put(UploadClient.KEY_PRJ_TITLE, e.attr(UploadClient.KEY_PRJ_TITLE)+"");
-            res.put(UploadClient.KEY_PRJ_DESC , e.attr(UploadClient.KEY_PRJ_DESC)+"");
-            resp.setContentType("text/plain; charset=utf8");
-            resp.getWriter().print(JSON.encode(res));
-        } else {
-            resp.getWriter().print("NO");
-        }
-        return true;
-    }
+
     @Override
     public boolean post(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
@@ -98,9 +76,9 @@ public class UploadCartridge implements ServletCartridge {
         if (u.startsWith("/"+URL_UPLOAD_PRJ)) {
             return uploadProject1(req, resp);
         }
-        if (u.startsWith("/"+UploadClient.URL_PRJ_INFO)) {
+        /*if (u.startsWith("/"+UploadClient.URL_PRJ_INFO)) {
             return getProjectInfo2(req, resp);
-        }
+        }*/
         return false;
     }
     public boolean uploadProject1(HttpServletRequest req,
@@ -159,21 +137,7 @@ public class UploadCartridge implements ServletCartridge {
         return true;
     }*/
 
-    public boolean getProjectInfo2(HttpServletRequest req,
-            HttpServletResponse resp) throws IOException {
-        String user=auth.currentUserId();
-        String prj=req.getParameter(UploadClient.PARAM_PRJ);
-        EQ e=ProjectInfo.get(user, prj, false);
-        Map<String,String> res=new HashMap<String,String>();
-        res.put(ProjectInfo.KEY_ALLOW_FORK, e.attr(ProjectInfo.KEY_ALLOW_FORK)+""  );
-        res.put(ProjectInfo.KEY_LICENSE, e.attr(ProjectInfo.KEY_LICENSE)+""  );
-        res.put(ProjectInfo.KEY_PUBLIST, e.attr(ProjectInfo.KEY_PUBLIST)+""  );
-        res.put(UploadClient.KEY_PRJ_TITLE, e.attr(UploadClient.KEY_PRJ_TITLE)+"");
-        res.put(UploadClient.KEY_PRJ_DESC , e.attr(UploadClient.KEY_PRJ_DESC)+"");
 
-        resp.getWriter().print(JSON.encode(res));
-        return true;
-    }
     //final static String salt=UploadClient.salt;
 
 }

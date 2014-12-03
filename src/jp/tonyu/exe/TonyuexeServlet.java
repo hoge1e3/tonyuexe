@@ -29,7 +29,7 @@ public class TonyuexeServlet extends HttpServlet {
         OAuthKeyDB okb = new OAuthKeyDB(dss);
         RequestSigner sgn=new RequestSigner(okb);
         MultiServletCartridge c=new MultiServletCartridge(
-                new ProjectInfoCartridge(),
+                new ProjectInfoCartridge(fs,sgn),
                 new UploadCartridge(fs,a,sgn),
                 new BlobCartridge(a, dss, sgn, true),
                 new LoginCartridge(dss, a, okb, fs, ServerInfo.tonyuexe_server+"/"),
