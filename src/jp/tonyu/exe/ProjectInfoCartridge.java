@@ -95,7 +95,10 @@ public class ProjectInfoCartridge implements ServletCartridge {
                 elem.put(ProjectInfo.KEY_LASTUPDATE, lud.getTime());
             }
             if (elem.get(ProjectInfo.KEY_ALLOW_FORK).equals(true) &&
-                    elem.get(ProjectInfo.KEY_LICENSE)!=null) res.add(elem);
+                    elem.get(ProjectInfo.KEY_LICENSE)==null) {
+                elem.put(ProjectInfo.KEY_ALLOW_FORK, false);
+            }
+            res.add(elem);
         }
         resp.setContentType("text/json; charset=utf8");
         resp.getWriter().print(JSON.encode(res));

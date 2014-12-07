@@ -35,7 +35,9 @@
         var lbl={
                 mit:"MIT License",
                 gplv3:"GPL License ver3"
-        }
+        };
+        var editURL=(location.href.match(/localhost/)?
+                "http://localhost:8888":"http://tonyuedit.appspot.com");
         $.ajax({
             type:"get",
             url:"exe/listPublished",
@@ -55,7 +57,12 @@
                             " by ",r.user,
                             //["td",r.allowFork],
                             r.lastUpdate? " at "+fmt(new Date(r.lastUpdate))  :"",
-                            " / License: ",lbl[r.license]||r.license+""  ,
+                            " / License: ",lbl[r.license]||r.license+""  , " / ",
+                            (r.allowFork?
+                                    ["a",{
+                                        href:editURL+"/html/build/importFromJsdoit.html?user="+r.user+"&project="+r.project
+                                    },"Fork"]
+                            :"")
                                     ],
                             ["pre",["a", {href:url},["img",{
                                 style:"float:left;padding:10px;",
