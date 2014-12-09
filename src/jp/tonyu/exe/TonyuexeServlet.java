@@ -18,6 +18,7 @@ import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.RequestFragmentReceiver;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
+import jp.tonyu.udb.UDBCartridge;
 
 @SuppressWarnings("serial")
 public class TonyuexeServlet extends HttpServlet {
@@ -33,7 +34,8 @@ public class TonyuexeServlet extends HttpServlet {
                 new UploadCartridge(fs,a,sgn),
                 new BlobCartridge(a, dss, sgn, true),
                 new LoginCartridge(dss, a, okb, fs, ServerInfo.tonyuexe_server+"/"),
-                new RunScriptCartridge(fs) // this must be last!
+                new UDBCartridge(dss,a,true),
+                new RunScriptCartridge(dss, fs) // this must be last!
         );
         return new RequestFragmentReceiver(a, dss, c);
     }
