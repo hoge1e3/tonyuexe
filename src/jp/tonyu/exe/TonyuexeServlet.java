@@ -1,6 +1,9 @@
 package jp.tonyu.exe;
 
 import java.io.IOException;
+import java.io.InputStream;
+
+import javax.servlet.ServletContext;
 import javax.servlet.http.*;
 
 import com.google.appengine.api.datastore.DatastoreService;
@@ -19,6 +22,7 @@ import jp.tonyu.servlet.RequestFragmentReceiver;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.udb.UDBCartridge;
+import jp.tonyu.util.Streams;
 
 @SuppressWarnings("serial")
 public class TonyuexeServlet extends HttpServlet {
@@ -26,6 +30,7 @@ public class TonyuexeServlet extends HttpServlet {
     FS fs=new FS(new LSEmulator(dss, new MemCache()) );
 
     public ServletCartridge getCartridge(HttpServletRequest req) {
+        final ServletContext ctx = getServletContext();
         Auth a=new Auth(req.getSession());
         OAuthKeyDB okb = new OAuthKeyDB(dss);
         RequestSigner sgn=new RequestSigner(okb);

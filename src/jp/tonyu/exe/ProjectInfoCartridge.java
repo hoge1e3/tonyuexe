@@ -5,24 +5,32 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.mozilla.javascript.Function;
 
 import net.arnx.jsonic.JSON;
 
 import jp.tonyu.auth.RequestSigner;
 import jp.tonyu.edit.EQ;
 import jp.tonyu.edit.FS;
+import jp.tonyu.edit.JSRun;
 import jp.tonyu.edit.UploadClient;
 import jp.tonyu.fs.GLSFile;
+import jp.tonyu.js.SafeJSSession;
+import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
+import jp.tonyu.util.Streams;
 
 import java.util.Vector;
 
 import com.google.appengine.api.datastore.Entity;
 
 public class ProjectInfoCartridge implements ServletCartridge {
-
+    JSRun jsrun;
+    ServletContext sctx;
     public ProjectInfoCartridge(FS fs,RequestSigner sgn) {
         super();
         this.fs=fs;
@@ -35,6 +43,9 @@ public class ProjectInfoCartridge implements ServletCartridge {
     public boolean get(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         String u=req.getPathInfo();
+        if (u.startsWith("/listPublished.html")) {
+            return listPublishedHTML(req,resp);
+        }
         if (u.startsWith("/listPublished")) {
             return listPublished(resp);
         }
@@ -44,6 +55,15 @@ public class ProjectInfoCartridge implements ServletCartridge {
         if (u.startsWith("/fork")) {
             return fork(req,resp);
         }
+        return false;
+    }
+    private boolean listPublishedHTML(HttpServletRequest req,
+            HttpServletResponse resp) throws IOException {
+        jsrun.requireResource("/js/server/UI.js");
+        Function f=(Function)jsrun.requireResource("/js/server/showPrjInfo.js");
+        String prjInfoJSON=JSON.encode(listPublishedAsVector());
+        String res=(String)jsrun.call(f, new Object[]{prjInfoJSON, ServerInfo.editURL(req), ServerInfo.exeURL(req) });
+
         return false;
     }
     private boolean fork(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -76,6 +96,12 @@ public class ProjectInfoCartridge implements ServletCartridge {
         return true;
     }
     public boolean listPublished(HttpServletResponse resp) throws IOException {
+        Vector res = listPublishedAsVector();
+        resp.setContentType("text/json; charset=utf8");
+        resp.getWriter().print(JSON.encode(res));
+        return true;
+    }
+    public Vector listPublishedAsVector() {
         Vector res=new Vector();
         for (Entity ee:ProjectInfo.listPublished()) {
             EQ e=EQ.$(ee);
@@ -100,9 +126,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
             }
             res.add(elem);
         }
-        resp.setContentType("text/json; charset=utf8");
-        resp.getWriter().print(JSON.encode(res));
-        return true;
+        return res;
     }
     public boolean getProjectInfo(HttpServletRequest req,
             HttpServletResponse resp) throws IOException {
