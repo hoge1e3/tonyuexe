@@ -13,6 +13,7 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.CompositeFilterOperator;
 import com.google.appengine.api.datastore.Query.Filter;
 import com.google.appengine.api.datastore.Query.FilterOperator;
+import com.google.appengine.api.datastore.Query.SortDirection;
 
 public class ProjectInfo {
     public static final String KIND_PRJINFO = UploadClient.KIND_PRJINFO;
@@ -65,6 +66,7 @@ public class ProjectInfo {
         vQuery.setFilter(
                 new Query.FilterPredicate(KEY_PUBLIST, FilterOperator.EQUAL, true)
         );
+        vQuery.addSort(KEY_LASTUPDATE, SortDirection.DESCENDING);
         Iterable<Entity> it = new CountingEntityIterable( dss.prepare(vQuery).asIterable() );
         return it;
     }

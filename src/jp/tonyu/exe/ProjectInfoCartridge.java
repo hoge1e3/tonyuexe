@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import jp.tonyu.util.Convert;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,7 +48,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
             return listPublishedHTML(req,resp);
         }
         if (u.startsWith("/listPublished")) {
-            return listPublished(resp);
+            return listPublished(req,resp);
         }
         if (u.startsWith("/"+UploadClient.URL_PRJ_INFO)) {
             return getProjectInfo(req, resp);
@@ -61,7 +62,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
             HttpServletResponse resp) throws IOException {
         jsrun.requireResource("/js/server/UI.js");
         Function f=(Function)jsrun.requireResource("/js/server/showPrjInfo.js");
-        String prjInfoJSON=JSON.encode(listPublishedAsVector());
+        String prjInfoJSON=JSON.encode(listPublishedAsVector(0,10));
         String res=(String)jsrun.call(f, new Object[]{prjInfoJSON, ServerInfo.editURL(req), ServerInfo.exeURL(req) });
 
         return false;
@@ -95,15 +96,19 @@ public class ProjectInfoCartridge implements ServletCartridge {
         }
         return true;
     }
-    public boolean listPublished(HttpServletResponse resp) throws IOException {
-        Vector res = listPublishedAsVector();
+    public boolean listPublished(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        int offset=Convert.toIntDef(req.getParameter("offset"), 0);
+        int count=Convert.toIntDef(req.getParameter("count"), 10);
+        Vector res = listPublishedAsVector(offset,count);
         resp.setContentType("text/json; charset=utf8");
         resp.getWriter().print(JSON.encode(res));
         return true;
     }
-    public Vector listPublishedAsVector() {
+    public Vector listPublishedAsVector(int offset, int count) {
         Vector res=new Vector();
+        int i=0;
         for (Entity ee:ProjectInfo.listPublished()) {
+            if (i++<offset) continue;
             EQ e=EQ.$(ee);
             Map elem=new HashMap();
             e.putTo(elem,
@@ -125,6 +130,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
                 elem.put(ProjectInfo.KEY_ALLOW_FORK, false);
             }
             res.add(elem);
+            if (res.size()>=count) break;
         }
         return res;
     }
