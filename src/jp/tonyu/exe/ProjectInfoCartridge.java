@@ -44,6 +44,9 @@ public class ProjectInfoCartridge implements ServletCartridge {
     public boolean get(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         String u=req.getPathInfo();
+        if (u.startsWith("/addDateToPrjInfo")) {
+            return ProjectInfo.addDate();
+        }
         if (u.startsWith("/listPublished.html")) {
             return listPublishedHTML(req,resp);
         }
@@ -97,6 +100,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
         return true;
     }
     public boolean listPublished(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        //System.out.println(req.getParameter("offset"));
         int offset=Convert.toIntDef(req.getParameter("offset"), 0);
         int count=Convert.toIntDef(req.getParameter("count"), 10);
         Vector res = listPublishedAsVector(offset,count);
@@ -108,6 +112,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
         Vector res=new Vector();
         int i=0;
         for (Entity ee:ProjectInfo.listPublished()) {
+            //System.out.println("i="+i+" offset="+offset+" size="+res.size());
             if (i++<offset) continue;
             EQ e=EQ.$(ee);
             Map elem=new HashMap();

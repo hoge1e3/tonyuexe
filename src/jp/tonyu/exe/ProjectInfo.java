@@ -70,4 +70,20 @@ public class ProjectInfo {
         Iterable<Entity> it = new CountingEntityIterable( dss.prepare(vQuery).asIterable() );
         return it;
     }
+    public static boolean addDate() {
+        Query vQuery = new Query(KIND_PRJINFO);
+        Iterable<Entity> it =  dss.prepare(vQuery).asIterable();
+        int n=0;
+        for (Entity e:it) {
+            EQ eq=EQ.$(e);
+            System.out.println(eq.attr(KEY_PRJ_NAME));
+            if (eq.attr(KEY_LASTUPDATE)==null) {
+                eq.attr(KEY_LASTUPDATE,new Date(new Date().getTime()-(60+n)*86400L*1000L   ));
+                eq.putTo(dss);
+                n++;
+            }
+        }
+
+        return true;
+    }
 }

@@ -39,7 +39,7 @@
         var editURL=(location.href.match(/localhost/)?
                 "http://localhost:8888":"http://tonyuedit.appspot.com");
 
-        var offset=0, loading=false;
+        var offset=0, loading=false, loadedAll=false;
         load(offset);
         function load(offset) {
             addLoading();
@@ -49,6 +49,7 @@
                 data:{offset:offset},
                 success: function (res) {
                     console.log(res);
+                    if (res.length==0) loadedAll=true;
                     /*res.sort(function (a,b) {
                         var la=a.lastUpdate || 0;
                         var lb=b.lastUpdate || 0;
@@ -86,8 +87,9 @@
         }
         $(window).scroll(function() {
             var bottom = $(window).scrollTop() + window.innerHeight;
-            if (!loading && bottom >= $(document).height() - 60) {
+            if (!loadedAll && !loading && bottom >= $(document).height() - 60) {
                 offset+=10;
+                console.log(offset);
                 load(offset);
             }
             console.log(bottom);
