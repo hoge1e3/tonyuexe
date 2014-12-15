@@ -17,11 +17,12 @@
 <!-- Custom styles for this template -->
 <link href="css/tonyu.css" rel="stylesheet">
 
-    <title>Tonyu System 2 公開プロジェクト一覧</title>
+    <title>公開プロジェクト一覧  - Tonyu System 2</title>
     <script src="js/lib/jquery-1.10.1.js"></script>
     <script src="js/lib/util.js"></script>
     <script src="js/lib/UI.js"></script>
     <script>
+
     function pad0(n,c) {
         if (!c) c=2;
         var res="00000000"+n;
@@ -39,7 +40,7 @@
         var editURL=(location.href.match(/localhost/)?
                 "http://localhost:8888":"http://tonyuedit.appspot.com");
 
-        var offset=0, loading=false, loadedAll=false;
+        var offset=0, loading=false, loadedAll=false, loadBar, barx=0, barc=0;
         load(offset);
         function load(offset) {
             addLoading();
@@ -47,6 +48,9 @@
                 type:"get",
                 url:"exe/listPublished",
                 data:{offset:offset},
+                error: function (_,e,err) {
+                    $("#prjs").append(e+"  Please reload.");
+                },
                 success: function (res) {
                     console.log(res);
                     if (res.length==0) loadedAll=true;
@@ -92,16 +96,27 @@
                 console.log(offset);
                 load(offset);
             }
-            console.log(bottom);
+            //console.log(bottom);
         });
         function addLoading() {
             loading=true;
-            $("#prjs").append($("<div>").attr("class","ld").append("Loading..."));
+            loadBar=$("<canvas>").attr({width:$(window).width(),height:10});
+            $("#prjs").append($("<div>").attr("class","ld").append(loadBar));
         }
         function removeLoading() {
             loading=false;
+            loadBar=null;
             $(".ld").remove();
         }
+        setInterval(function () {
+            var cols=["rgb(179,255,142)","rgb(96,209,62)", "rgb(0,169,0)"];
+            if (!loadBar) return;
+            var ctx=loadBar[0].getContext("2d");
+            ctx.fillStyle=cols[barc % cols.length];
+            ctx.fillRect(0,0,barx,10);
+            barx+=10;
+            if (barx>loadBar.width()) {barc++;barx=0;}
+        },16);
     });
     </script>
   </head>

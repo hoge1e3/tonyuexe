@@ -7,10 +7,12 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.appengine.api.datastore.DatastoreService;
 
+import jp.tonyu.edit.EQ;
 import jp.tonyu.edit.FS;
 import jp.tonyu.fs.GLSFile;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.udb.AppAuth;
+import jp.tonyu.util.Html;
 import jp.tonyu.util.Resource;
 
 public class RunScriptCartridge implements ServletCartridge {
@@ -30,13 +32,16 @@ public class RunScriptCartridge implements ServletCartridge {
         url=url.substring(1);
         GLSFile c = fs.get("/home/").rel(url+"/").rel(CONCAT);
         String []up=url.split("/");
+        EQ pinfo = ProjectInfo.get(up[0], up[1], false);
+        String title =pinfo.attr(ProjectInfo.KEY_PRJ_TITLE)+"";
         AppAuth appAuth=AppAuth.create(dss, up[0], up[1]);
         System.out.println(c+" "+c.exists());
         if (c.exists()) {
             String html = Resource.text(RunScriptCartridge.class, ".html");
             resp.setContentType("text/html; charset=utf8");
             resp.getWriter().println(
-                    html.replace("$CONCAT", appAuth.embed(c.text()) )
+                    Html.p(html, title, appAuth.embed(c.text()))
+//                    html.replace("$CONCAT", appAuth.embed(c.text()) )
             );
             return true;
         }
