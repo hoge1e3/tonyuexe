@@ -100,7 +100,7 @@
         });
         function addLoading() {
             loading=true;
-            loadBar=$("<canvas>").attr({width:$(window).width(),height:10});
+            loadBar=$("<canvas>").attr({width:$(window).width()-30,height:10});
             $("#prjs").append($("<div>").attr("class","ld").append(loadBar));
         }
         function removeLoading() {
