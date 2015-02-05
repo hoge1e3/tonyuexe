@@ -4,7 +4,7 @@ import java.util.Date;
 
 import jp.tonyu.edit.CountingEntityIterable;
 import jp.tonyu.edit.EQ;
-import jp.tonyu.edit.UploadClient;
+import jp.tonyu.cartridges.UploadClient;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;

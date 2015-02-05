@@ -4,28 +4,24 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Vector;
 
-import jp.tonyu.util.Convert;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mozilla.javascript.Function;
-
-import net.arnx.jsonic.JSON;
-
 import jp.tonyu.auth.RequestSigner;
+import jp.tonyu.cartridges.JSRun;
+import jp.tonyu.cartridges.UploadClient;
 import jp.tonyu.edit.EQ;
 import jp.tonyu.edit.FS;
-import jp.tonyu.edit.JSRun;
-import jp.tonyu.edit.UploadClient;
 import jp.tonyu.fs.GLSFile;
-import jp.tonyu.js.SafeJSSession;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
-import jp.tonyu.util.Streams;
+import jp.tonyu.util.Convert;
+import net.arnx.jsonic.JSON;
 
-import java.util.Vector;
+import org.mozilla.javascript.Function;
 
 import com.google.appengine.api.datastore.Entity;
 
@@ -92,7 +88,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
             JSON.encode(elem)+"</script>";
             resp.setContentType("text/plain; charset=utf8");
             resp.getWriter().print("projectInfoIs('"+
-                    buf.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'").replaceAll("\n", "\\\\n")+"');"
+                    buf.replaceAll("\\\\", "\\\\\\\\").replaceAll("'", "\\\\'").replaceAll("\n", "\\\\n").replaceAll("\r", "\\\\r")+"');"
             );
         } else {
             throw new RuntimeException("Fork not allowed");

@@ -1,19 +1,18 @@
 package jp.tonyu.exe;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import javax.servlet.ServletContext;
-import javax.servlet.http.*;
-
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import jp.tonyu.auth.Auth;
-import jp.tonyu.auth.LoginCartridge;
 import jp.tonyu.auth.OAuthKeyDB;
 import jp.tonyu.auth.RequestSigner;
-import jp.tonyu.blob.BlobCartridge;
+import jp.tonyu.cartridges.BlobCartridge;
+import jp.tonyu.cartridges.LoginCartridge;
+import jp.tonyu.cartridges.UDBCartridge;
 import jp.tonyu.edit.FS;
 import jp.tonyu.fs.LSEmulator;
 import jp.tonyu.fs.MemCache;
@@ -21,8 +20,9 @@ import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.RequestFragmentReceiver;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
-import jp.tonyu.udb.UDBCartridge;
-import jp.tonyu.util.Streams;
+
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
 
 @SuppressWarnings("serial")
 public class TonyuexeServlet extends HttpServlet {
