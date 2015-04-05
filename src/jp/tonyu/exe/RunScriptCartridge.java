@@ -16,6 +16,7 @@ import jp.tonyu.util.Html;
 import jp.tonyu.util.Resource;
 
 public class RunScriptCartridge implements ServletCartridge {
+    private static final String VIEW_SOURCE = "/view-source";
     final FS fs;
     static final String CONCAT="concat.js";
     DatastoreService dss;
@@ -29,24 +30,44 @@ public class RunScriptCartridge implements ServletCartridge {
     public boolean get(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         String url=req.getPathInfo();
+        boolean vs=false;
         url=url.substring(1);
+        if (url.endsWith(VIEW_SOURCE)) {
+            vs=true;
+            url=url.substring(0,url.length()-VIEW_SOURCE.length());
+        }
         GLSFile c = fs.get("/home/").rel(url+"/").rel(CONCAT);
-        String []up=url.split("/");
-        EQ pinfo = ProjectInfo.get(up[0], up[1], false);
-        String title =pinfo.attr(ProjectInfo.KEY_PRJ_TITLE)+"";
-        AppAuth appAuth=AppAuth.create(dss, up[0], up[1]);
-        System.out.println(c+" "+c.exists());
         if (c.exists()) {
+            String []up=url.split("/");
+            EQ pinfo = ProjectInfo.get(up[0], up[1], false);
+            String title =pinfo.attr(ProjectInfo.KEY_PRJ_TITLE)+"";
+            if (vs && pinfo.attr(ProjectInfo.KEY_ALLOW_FORK).equals(true) ) {
+                return viewSource(req,resp, c,title);
+            }
+            AppAuth appAuth=AppAuth.create(dss, up[0], up[1]);
+            System.out.println(c+" "+c.exists());
             String html = Resource.text(RunScriptCartridge.class, ".html");
             resp.setContentType("text/html; charset=utf8");
             resp.getWriter().println(
                     Html.p(html, title, appAuth.embed(c.text()))
-//                    html.replace("$CONCAT", appAuth.embed(c.text()) )
             );
             return true;
+        } else {
+            resp.setStatus(404);
+            resp.getWriter().print("Not found: "+url);
+            return true;
+
         }
-        resp.setStatus(404);
-        resp.getWriter().print("Not found: "+url);
+    }
+
+
+    private boolean viewSource(HttpServletRequest req,
+            HttpServletResponse resp, GLSFile concatFile, String title) throws IOException {
+        String html = Resource.text(ViewSourceCartridge.class, ".html");
+        resp.setContentType("text/html; charset=utf8");
+        resp.getWriter().println(
+                Html.p(html, title, concatFile.text())
+                );
         return true;
     }
 

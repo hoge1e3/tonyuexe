@@ -71,11 +71,15 @@
                                 " by ",r.user,
                                 r.lastUpdate? " at "+fmt(new Date(r.lastUpdate))  :"",
                                 " / License: ",lbl[r.license]||r.license+""  , " / ",
-                                (r.allowFork?
-                                        ["a",{
-                                            href:editURL+"/html/build/importFromJsdoit.html?user="+r.user+"&project="+r.project
-                                        },"Fork"]
-                                :"")
+                                (r.allowFork?["span",
+	                                     ["a",{
+	                                         href:url+"/view-source",target:"viewsrc"
+	                                     },"View Source"],
+	                                     " / ",
+	                                     ["a",{
+	                                         href:editURL+"/html/build/importFromJsdoit.html?user="+r.user+"&project="+r.project
+	                                     },"Fork"]
+                                ]:"")
                                         ],
                                 ["pre",["a", {href:url,target:"play"},["img",{
                                     style:"float:left;padding:10px;",
