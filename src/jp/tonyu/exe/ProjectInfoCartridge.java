@@ -11,11 +11,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import jp.tonyu.auth.RequestSigner;
-import jp.tonyu.cartridges.JSRun;
 import jp.tonyu.cartridges.UploadClient;
 import jp.tonyu.edit.EQ;
 import jp.tonyu.edit.FS;
 import jp.tonyu.fs.GLSFile;
+import jp.tonyu.js.JSRun;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.util.Convert;
