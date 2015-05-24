@@ -62,7 +62,7 @@ public class ProjectInfoCartridge implements ServletCartridge {
         jsrun.requireResource("/js/server/UI.js");
         Function f=(Function)jsrun.requireResource("/js/server/showPrjInfo.js");
         String prjInfoJSON=JSON.encode(listPublishedAsVector(0,10));
-        String res=(String)jsrun.call(f, new Object[]{prjInfoJSON, ServerInfo.editURL(req), ServerInfo.exeURL(req) });
+        String res=(String)jsrun.call(f, new Object[]{prjInfoJSON, ServerInfo.editTop(req), ServerInfo.exeTop(req) });
 
         return false;
     }
