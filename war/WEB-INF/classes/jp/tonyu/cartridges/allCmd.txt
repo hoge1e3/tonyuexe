@@ -51,15 +51,15 @@ dbInsert
 dbUpdate
 dbDelete
 
-*UploadClient(edit)
-
-get-project-info
-upload-project
-
 *RequestFragment(edit/exe)
 
 sendFragment
 runFragments
+
+*RunScript(exe)
+
+:user/:project/
+:user/:project/view-source
 
 *ProjectInfo (exe)
 
@@ -69,10 +69,10 @@ listPublished
 get-project-info
 fork
 
-*RunScript(exe)
+*UploadClient(edit)
 
-:user/:project/
-:user/:project/view-source
+get-project-info
+upload-project
 
 *Upload(exe)
 
