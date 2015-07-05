@@ -12,10 +12,12 @@ import jp.tonyu.auth.OAuthKeyDB;
 import jp.tonyu.auth.RequestSigner;
 import jp.tonyu.cartridges.BlobCartridge;
 import jp.tonyu.cartridges.LoginCartridge;
+import jp.tonyu.cartridges.ShellCartridge;
 import jp.tonyu.cartridges.UDBCartridge;
 import jp.tonyu.edit.FS;
 import jp.tonyu.fs.LSEmulator;
 import jp.tonyu.fs.MemCache;
+import jp.tonyu.js.JSRun;
 import jp.tonyu.servlet.MultiServletCartridge;
 import jp.tonyu.servlet.RequestFragmentReceiver;
 import jp.tonyu.servlet.ServerInfo;
@@ -30,7 +32,6 @@ public class TonyuexeServlet extends HttpServlet {
     FS fs=new FS(new LSEmulator(dss, new MemCache()) );
 
     public ServletCartridge getCartridge(HttpServletRequest req) {
-        final ServletContext ctx = getServletContext();
         Auth a=new Auth(req.getSession());
         OAuthKeyDB okb = new OAuthKeyDB(dss);
         RequestSigner sgn=new RequestSigner(okb);
@@ -38,10 +39,15 @@ public class TonyuexeServlet extends HttpServlet {
                 new ProjectInfoCartridge(fs,sgn),
                 new UploadCartridge(fs,a,sgn),
                 new BlobCartridge(a, dss, sgn, true),
-                new LoginCartridge(dss, a, okb, fs, ServerInfo.tonyuexe_server+"/"),
-                new UDBCartridge(dss,a,true),
-                new RunScriptCartridge(dss, fs) // this must be last!
+                new LoginCartridge(dss, a, okb, fs, ServerInfo.exeTop(req)+"/"),
+                new UDBCartridge(dss,a,true)
         );
+        if (a.isRoot()) {
+            ServletContext servletContext = getServletContext();
+            JSRun jsRun=new JSRun(fs, servletContext);
+            c.insert(new ShellCartridge(jsRun));
+        }
+        c.insert(new RunScriptCartridge(dss, fs)); // this must be last!
         return new RequestFragmentReceiver(a, dss, c);
     }
     public void doGet(HttpServletRequest req, HttpServletResponse resp)
