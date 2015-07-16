@@ -1,9 +1,14 @@
 package jp.tonyu.exe;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import net.arnx.jsonic.JSON;
+import net.arnx.jsonic.JSONException;
 
 import com.google.appengine.api.datastore.DatastoreService;
 
@@ -17,6 +22,7 @@ import jp.tonyu.util.Resource;
 
 public class RunScriptCartridge implements ServletCartridge {
     private static final String VIEW_SOURCE = "/view-source";
+    private static final String SINGLE_INFO = "/info";
     final FS fs;
     static final String CONCAT="concat.js";
     DatastoreService dss;
@@ -30,12 +36,17 @@ public class RunScriptCartridge implements ServletCartridge {
     public boolean get(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         String url=req.getPathInfo();
-        boolean vs=false;
+        boolean vs=false,desc=false;
         url=url.substring(1);
         if (url.endsWith(VIEW_SOURCE)) {
             vs=true;
             url=url.substring(0,url.length()-VIEW_SOURCE.length());
         }
+        if (url.endsWith(SINGLE_INFO)) {
+            desc=true;
+            url=url.substring(0,url.length()-SINGLE_INFO.length());
+        }
+
         GLSFile c = fs.get("/home/").rel(url+"/").rel(CONCAT);
         if (c.exists()) {
             String []up=url.split("/");
@@ -43,6 +54,9 @@ public class RunScriptCartridge implements ServletCartridge {
             String title =pinfo.attr(ProjectInfo.KEY_PRJ_TITLE)+"";
             if (vs && pinfo.attr(ProjectInfo.KEY_ALLOW_FORK).equals(true) ) {
                 return viewSource(req,resp, c,title);
+            }
+            if (desc) {
+                return singleInfo(req,resp, pinfo);
             }
             AppAuth appAuth=AppAuth.create(dss, up[0], up[1]);
             System.out.println(c+" "+c.exists());
@@ -60,6 +74,19 @@ public class RunScriptCartridge implements ServletCartridge {
         }
     }
 
+
+    private boolean singleInfo(HttpServletRequest req,
+            HttpServletResponse resp, EQ pinfo) throws JSONException, IOException {
+        String title=(String)pinfo.attr(ProjectInfo.KEY_PRJ_TITLE);
+        Map m=new HashMap();
+        pinfo.putTo(m);
+        String html = Resource.text(SingleInfoCartridge.class, ".html");
+        resp.setContentType("text/html; charset=utf8");
+        resp.getWriter().println(
+                Html.p(html, title, JSON.encode(m))
+                );
+        return true;
+    }
 
     private boolean viewSource(HttpServletRequest req,
             HttpServletResponse resp, GLSFile concatFile, String title) throws IOException {
