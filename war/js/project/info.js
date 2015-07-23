@@ -20,7 +20,7 @@ function addProjectInfo(r,i) {
             ["a",{name:i}],
             ["div",
                  ["a",{href:url,"class":"title",target:"play"},title],
-                 " by ",r.user,
+                 " by ",["a",{href:"/exe/"+r.user},r.user],
                  r.lastUpdate? " at "+fmt(new Date(r.lastUpdate))  :"",
                  " / License: ",lbl[r.license]||r.license+""  , " / ",
                  (r.allowFork?["span",
@@ -39,7 +39,7 @@ function addProjectInfo(r,i) {
            ["pre",
               ["a", {href:url,target:"play"},["img",{
                  style:"float:left;padding:10px;",
-                 src:(r.thumbnail?r.thumbnail:"images/nowprint.png")
+                 src:(r.thumbnail?r.thumbnail:"/images/nowprint.png")
                }]],
                (r.description || "")],
            ["div",{style:"clear:left;"}]

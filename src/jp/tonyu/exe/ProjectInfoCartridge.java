@@ -43,9 +43,9 @@ public class ProjectInfoCartridge implements ServletCartridge {
         if (u.startsWith("/addDateToPrjInfo")) {
             return ProjectInfo.addDate();
         }
-        if (u.startsWith("/listPublished.html")) {
+        /*if (u.startsWith("/listPublished.html")) {
             return listPublishedHTML(req,resp);
-        }
+        }*/
         if (u.startsWith("/listPublished")) {
             return listPublished(req,resp);
         }
@@ -57,15 +57,16 @@ public class ProjectInfoCartridge implements ServletCartridge {
         }
         return false;
     }
-    private boolean listPublishedHTML(HttpServletRequest req,
+    /*private boolean listPublishedHTML(HttpServletRequest req,
             HttpServletResponse resp) throws IOException {
         jsrun.requireResource("/js/server/UI.js");
         Function f=(Function)jsrun.requireResource("/js/server/showPrjInfo.js");
-        String prjInfoJSON=JSON.encode(listPublishedAsVector(0,10));
+        String user=req.getParameter("user");
+        String prjInfoJSON=JSON.encode(listPublishedAsVector(user, 0,10));
         String res=(String)jsrun.call(f, new Object[]{prjInfoJSON, ServerInfo.editTop(req), ServerInfo.exeTop(req) });
 
         return false;
-    }
+    }*/
     private boolean fork(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String user=req.getParameter(UploadClient.PARAM_USR);
         String prj=req.getParameter(UploadClient.PARAM_PRJ);
@@ -99,15 +100,17 @@ public class ProjectInfoCartridge implements ServletCartridge {
         //System.out.println(req.getParameter("offset"));
         int offset=Convert.toIntDef(req.getParameter("offset"), 0);
         int count=Convert.toIntDef(req.getParameter("count"), 10);
-        Vector res = listPublishedAsVector(offset,count);
+        String user=req.getParameter("user");
+        Vector res = listPublishedAsVector(user, offset,count);
         resp.setContentType("text/json; charset=utf8");
         resp.getWriter().print(JSON.encode(res));
         return true;
     }
-    public Vector listPublishedAsVector(int offset, int count) {
+    public Vector listPublishedAsVector(String user,int offset, int count) {
+        System.out.println("listpub user="+user);
         Vector res=new Vector();
         int i=0;
-        for (Entity ee:ProjectInfo.listPublished()) {
+        for (Entity ee:ProjectInfo.listPublished(user)) {
             //System.out.println("i="+i+" offset="+offset+" size="+res.size());
             if (i++<offset) continue;
             EQ e=EQ.$(ee);

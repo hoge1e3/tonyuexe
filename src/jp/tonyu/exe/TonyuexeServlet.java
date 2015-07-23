@@ -47,7 +47,7 @@ public class TonyuexeServlet extends HttpServlet {
             JSRun jsRun=new JSRun(fs, servletContext);
             c.insert(new ShellCartridge(jsRun));
         }
-        c.insert(new RunScriptCartridge(dss, fs)); // this must be last!
+        c.insert(new RunScriptCartridge(this, dss, fs)); // this must be last!
         return new RequestFragmentReceiver(a, dss, c);
     }
     public void doGet(HttpServletRequest req, HttpServletResponse resp)

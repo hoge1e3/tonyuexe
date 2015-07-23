@@ -1,9 +1,13 @@
 package jp.tonyu.exe;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -19,6 +23,7 @@ import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.udb.AppAuth;
 import jp.tonyu.util.Html;
 import jp.tonyu.util.Resource;
+import jp.tonyu.util.Streams;
 
 public class RunScriptCartridge implements ServletCartridge {
     private static final String VIEW_SOURCE = "/view-source";
@@ -26,8 +31,9 @@ public class RunScriptCartridge implements ServletCartridge {
     final FS fs;
     static final String CONCAT="concat.js";
     DatastoreService dss;
-    public RunScriptCartridge(DatastoreService dss, FS fs) {
+    public RunScriptCartridge(HttpServlet serv, DatastoreService dss, FS fs) {
         super();
+        servlet=serv;
         this.dss =dss;
         this.fs = fs;
     }
@@ -45,6 +51,10 @@ public class RunScriptCartridge implements ServletCartridge {
         if (url.endsWith(SINGLE_INFO)) {
             desc=true;
             url=url.substring(0,url.length()-SINGLE_INFO.length());
+        }
+        String urls[]=url.split("/");
+        if (urls.length==1) {
+            return showUser(req, resp, url);
         }
 
         GLSFile c = fs.get("/home/").rel(url+"/").rel(CONCAT);
@@ -74,6 +84,14 @@ public class RunScriptCartridge implements ServletCartridge {
         }
     }
 
+
+    private boolean showUser(HttpServletRequest req, HttpServletResponse resp,
+            String url) throws IOException {
+        resp.setContentType("text/html; charset=utf8");
+        InputStream r = servlet.getServletContext().getResourceAsStream("/index.html");
+        Streams.redirect(r, resp.getOutputStream());
+        return true;
+    }
 
     private boolean singleInfo(HttpServletRequest req,
             HttpServletResponse resp, EQ pinfo) throws JSONException, IOException {
@@ -114,4 +132,6 @@ public class RunScriptCartridge implements ServletCartridge {
         return false;
     }
 
+
+    HttpServlet servlet;
 }

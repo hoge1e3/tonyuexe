@@ -61,14 +61,21 @@ public class ProjectInfo {
                 attr(KEY_LICENSE,license).attr(KEY_LASTUPDATE, new Date());
         dss.put(e.get());
     }
-    public static Iterable<Entity>  listPublished() {
-        Query vQuery = new Query(KIND_PRJINFO);
+    public static Iterable<Entity>  listPublished(String user) {
+        EQ e = EQ.$(KIND_PRJINFO).attr(KEY_PUBLIST, true);
+        if (user!=null && user.length()>0) {
+            e.attr(KEY_USER,user);
+        }
+        e.order(KEY_LASTUPDATE, true);
+        return e.asIterable(dss);
+        /*Query vQuery = new Query(KIND_PRJINFO);
         vQuery.setFilter(
                 new Query.FilterPredicate(KEY_PUBLIST, FilterOperator.EQUAL, true)
         );
+        Query vQuery=e.query();
         vQuery.addSort(KEY_LASTUPDATE, SortDirection.DESCENDING);
         Iterable<Entity> it = new CountingEntityIterable( dss.prepare(vQuery).asIterable() );
-        return it;
+        return it;*/
     }
     public static boolean addDate() {
         Query vQuery = new Query(KIND_PRJINFO);
