@@ -119,7 +119,7 @@ exports.LS2FileSync=function(req, resp){
 			dst.textMeta(o.text, o);
 		}
 	}
-	resp.setHeader("Content-Type", "text/json;charset=utf8");
+	resp.setHeader("Content-Type", "text/plain;charset=utf8");
 	resp.send("OK!!");
 };
 return exports;
