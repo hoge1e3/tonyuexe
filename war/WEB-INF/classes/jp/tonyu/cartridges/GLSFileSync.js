@@ -41,7 +41,7 @@ exports.getDirInfo=function(req, resp){
     }
 
     var basef;
-    resp.setHeader("Content-Type", "text/plain;charset=utf8");
+    resp.setHeader("Content-Type", "text/json;charset=utf8");
     if (base==null) {
         basef=fsHome;
         base="/";
@@ -70,7 +70,7 @@ function setMeta(f, meta) {
 exports.File2LSSync=function(req, resp){
 	var paths=JSON.parse(req.body.paths);
 	var base=req.body.base;
-	resp.setHeader("Content-Type", "text/plain;charset=utf8");
+	resp.setHeader("Content-Type", "text/json;charset=utf8");
 	var basef;
 	if (base==null) {
 		basef=fsHome;
