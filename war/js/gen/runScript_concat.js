@@ -1,4 +1,4 @@
-// Created at Thu Nov 26 2015 10:15:22 GMT+0900 (東京 (標準時))
+// Created at Sun Dec 06 2015 11:24:57 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -119,6 +119,10 @@ define([],function () {
             if (a!==b) this.fail(a,"!==",b);
             return a;
         },
+        isset: function (a, n) {
+            if (a==null) this.fail((n||"")+" is null/undef");
+            return a;
+        },
         is: function (value,type) {
             var t=type,v=value;
             if (t==null) return t;
@@ -199,6 +203,13 @@ define([],function () {
     assert.is=function () {
         try {
             return top.is.apply(top,arguments);
+        } catch(e) {
+            throw new Error(e.message);
+        }
+    };
+    assert.isset=function () {
+        try {
+            return top.isset.apply(top,arguments);
         } catch(e) {
             throw new Error(e.message);
         }
@@ -302,6 +313,7 @@ function startsWith(str,prefix) {
     return str.substring(0, prefix.length)===prefix;
 }
 var driveLetter=/^([a-zA-Z]):/;
+var url=/^([a-z]+):\/\/([^\/]+)\//;
 var PathUtil;
 var Path=assert.f(function (s) {
     this.is(s,String);
@@ -335,9 +347,14 @@ PathUtil={
     hasDriveLetter: function (path) {
         return driveLetter.exec(path);
     },
+    isURL: function (path) {
+        var r=url.exec(path);
+        if (!r) return;
+        return {protocol:r[1], hostPort:r[2], path:SEP+path.substring(r[0].length)  };
+    },
     isPath: function (path) {
     	assert.is(arguments,[String]);
-		return !path.match(/\/\//);
+		return true;//!path.match(/\/\//);
     },
     isRelativePath: function (path) {
 		assert.is(arguments,[String]);
@@ -346,7 +363,7 @@ PathUtil={
     isAbsolutePath: function (path) {
 		assert.is(arguments,[String]);
 		return PathUtil.isPath(path) &&
-		(PathUtil.startsWith(path,SEP) || PathUtil.hasDriveLetter(path));
+		(PathUtil.startsWith(path,SEP) || PathUtil.hasDriveLetter(path) ||  PathUtil.isURL(path));
     },
     isDir: function (path) {
 		assert.is(arguments,[Path]);
@@ -354,6 +371,13 @@ PathUtil={
     },
 	splitPath: function (path) {
 		assert.is(arguments,[Path]);
+		var u;
+		if (u=this.isURL(path)) {
+		    var p=this.splitPath(u.path);
+		    p[0]=u.protocol+"://"+u.hostPort;
+		    return p;
+		}
+		path=path.replace(/\/+/g,SEP);
 	    var res=path.split(SEP);
         if (res[res.length-1]=="") {
             res[res.length-2]+=SEP;
@@ -466,187 +490,6 @@ define([], function () {
       '.ppam':'application/vnd.ms-powerpoint.addin.macroEnabled.12',
       ".tonyu":"text/tonyu"
    };
-});
-requireSimulator.setName('DataURL');
-define(["extend","assert"],function (extend,assert) {
-    var A=(typeof Buffer!="undefined") ? Buffer :ArrayBuffer;
-    function isBuffer(data) {
-        return data instanceof ArrayBuffer ||
-        (typeof Buffer!="undefined" && data instanceof Buffer);
-    }
-    var DataURL=function (data, contentType){
-      // data: String/Array/ArrayBuffer
-      if (typeof data=="string") {
-          this.url=data;
-          this.dataURL2bin(data);
-      } else if (data && isBuffer(data.buffer)) {
-          this.buffer=data.buffer;
-          assert.is(contentType,String);
-          this.contentType=contentType;
-          this.bin2dataURL(this.buffer, this.contentType);
-      } else if (isBuffer(data)) {
-          this.buffer=data;
-          assert.is(contentType,String);
-          this.contentType=contentType;
-          this.bin2dataURL(this.buffer, this.contentType);
-      } else assert.fail("Invalid args: ",arguments);
-   };
-   extend(DataURL.prototype,{
-      bin2dataURL: function (b, contentType) {
-          assert(isBuffer(b));
-          assert.is(contentType,String);
-  	     var head=this.dataHeader(contentType);
-	     var base64=Base64_From_ArrayBuffer(b);
-	     assert.is(base64,String);
-	     return this.url=head+base64;
-	  },
-	  dataURL2bin: function (dataURL) {
-          assert.is(arguments,[String]);
-	      var reg=/^data:([^;]+);base64,/i;
-	      var r=reg.exec(dataURL);
-	      assert(r, ["malformed dataURL:", dataURL] );
-	      this.contentType=r[1];
-	      this.buffer=Base64_To_ArrayBuffer(dataURL.substring(r[0].length));
-          return assert.is(this.buffer , A);
-  	  },
-  	  dataHeader: function (ctype) {
-	      assert.is(arguments,[String]);
-	      return "data:"+ctype+";base64,";
-   	  },
-   	  toString: function () {return assert.is(this.url,String);}
-   });
-
-	function Base64_To_ArrayBuffer(base64){
-	    base64=base64.replace(/[\n=]/g,"");
-	    var dic = new Object();
-	    dic[0x41]= 0; dic[0x42]= 1; dic[0x43]= 2; dic[0x44]= 3; dic[0x45]= 4; dic[0x46]= 5; dic[0x47]= 6; dic[0x48]= 7; dic[0x49]= 8; dic[0x4a]= 9; dic[0x4b]=10; dic[0x4c]=11; dic[0x4d]=12; dic[0x4e]=13; dic[0x4f]=14; dic[0x50]=15;
-	    dic[0x51]=16; dic[0x52]=17; dic[0x53]=18; dic[0x54]=19; dic[0x55]=20; dic[0x56]=21; dic[0x57]=22; dic[0x58]=23; dic[0x59]=24; dic[0x5a]=25; dic[0x61]=26; dic[0x62]=27; dic[0x63]=28; dic[0x64]=29; dic[0x65]=30; dic[0x66]=31;
-	    dic[0x67]=32; dic[0x68]=33; dic[0x69]=34; dic[0x6a]=35; dic[0x6b]=36; dic[0x6c]=37; dic[0x6d]=38; dic[0x6e]=39; dic[0x6f]=40; dic[0x70]=41; dic[0x71]=42; dic[0x72]=43; dic[0x73]=44; dic[0x74]=45; dic[0x75]=46; dic[0x76]=47;
-	    dic[0x77]=48; dic[0x78]=49; dic[0x79]=50; dic[0x7a]=51; dic[0x30]=52; dic[0x31]=53; dic[0x32]=54; dic[0x33]=55; dic[0x34]=56; dic[0x35]=57; dic[0x36]=58; dic[0x37]=59; dic[0x38]=60; dic[0x39]=61; dic[0x2b]=62; dic[0x2f]=63;
-	    var num = base64.length;
-	    var n = 0;
-	    var b = 0;
-	    var e;
-
-	    if(!num) return (new A(0));
-	    //if(num < 4) return null;
-	    //if(num % 4) return null;
-
-	    // AA     12    1
-	    // AAA    18    2
-	    // AAAA   24    3
-	    // AAAAA  30    3
-	    // AAAAAA 36    4
-	    // num*6/8
-	    e = Math.floor(num / 4 * 3);
-	    if(base64.charAt(num - 1) == '=') e -= 1;
-	    if(base64.charAt(num - 2) == '=') e -= 1;
-
-	    var ary_buffer = new A( e );
-	    var ary_u8 = (typeof Buffer!="undefined" ? ary_buffer : new Uint8Array( ary_buffer ));
-	    var i = 0;
-	    var p = 0;
-	    while(p < e){
-	        b = dic[base64.charCodeAt(i)];
-	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i));//return null;
-	        n = (b << 2);
-	        i ++;
-
-	        b = dic[base64.charCodeAt(i)];
-	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i))
-            ary_u8[p] = n | ((b >> 4) & 0x3);
-	        /*if (p==0) {
-	            console.log("WOW!", n | ((b >> 4) & 0x3), ary_u8[p]);
-	        }*/
-	        n = (b & 0x0f) << 4;
-	        i ++;
-	        p ++;
-	        if(p >= e) break;
-
-	        b = dic[base64.charCodeAt(i)];
-	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i))
-	        ary_u8[p] = n | ((b >> 2) & 0xf);
-	        n = (b & 0x03) << 6;
-	        i ++;
-	        p ++;
-	        if(p >= e) break;
-
-	        b = dic[base64.charCodeAt(i)];
-	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i))
-	        ary_u8[p] = n | b;
-	        i ++;
-	        p ++;
-	    }
-	    function fail(m) {
-	        console.log(m);
-	        console.log(base64,i);
-	        throw new Error(m);
-	    }
-        //console.log("WOW!", ary_buffer[0],ary_u8[0]);
-	    return ary_buffer;
-	}
-	function Base64_From_ArrayBuffer(ary_buffer){
-		var dic = [
-			'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
-			'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
-			'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
-			'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
-		];
-		var base64 = "";
-		var ary_u8 = new Uint8Array( ary_buffer );
-		var num = ary_u8.length;
-		var n = 0;
-		var b = 0;
-
-		var i = 0;
-		while(i < num){
-			b = ary_u8[i];
-			base64 += dic[(b >> 2)];
-			n = (b & 0x03) << 4;
-			i ++;
-			if(i >= num) break;
-
-			b = ary_u8[i];
-			base64 += dic[n | (b >> 4)];
-			n = (b & 0x0f) << 2;
-			i ++;
-			if(i >= num) break;
-
-			b = ary_u8[i];
-			base64 += dic[n | (b >> 6)];
-			base64 += dic[(b & 0x3f)];
-			i ++;
-		}
-
-		var m = num % 3;
-		if(m){
-			base64 += dic[n];
-		}
-		if(m == 1){
-			base64 += "==";
-		}else if(m == 2){
-			base64 += "=";
-		}
-		return base64;
-	}
-    return DataURL;
-});
-requireSimulator.setName('Contents');
-define(["DataURL"],function (DataURL){
-   var Contents={
-      convert: function (src, destType, options) {
-         // options:{encoding: , contentType: }
-         // src: String|DataURL|ArrayBuffer|OutputStream|Writer
-         // destType: String|DataURL|ArrayBuffer|InputStream|Reader
-         var srcType;
-         if (typeof src=="string") srcType=String;
-         if (src instanceof DataURL) srcType=DataURL;
-         if (src instanceof ArrayBuffer) srcType=ArrayBuffer;
-         if (srcType==destType) return src;
-         throw new Error("Cannot convert from "+srcType+" to "+destType);
-      }
-   };
-   return Contents;
 });
 requireSimulator.setName('Util');
 Util=(function () {
@@ -799,19 +642,378 @@ function privatize(o){
     }
     return res;
 }
+function hasNodeBuffer() {
+    return typeof Buffer!="undefined";
+}
+function isNodeBuffer(data) {
+    return (hasNodeBuffer() && data instanceof Buffer);
+}
+function isBuffer(data) {
+    return data instanceof ArrayBuffer || isNodeBuffer(data);
+}
+function utf8bytes2str(bytes) {
+    var e=[];
+    for (var i=0 ; i<bytes.length ; i++) {
+         e.push("%"+("0"+bytes[i].toString(16)).slice(-2));
+    }
+    try {
+        return decodeURIComponent(e.join(""));
+    } catch (er) {
+        console.log(e.join(""));
+        throw er;
+    }
+}
+function str2utf8bytes(str, binType) {
+    var e=encodeURIComponent(str);
+    var r=/^%(..)/;
+    var a=[];
+    var ad=0;
+    for (var i=0 ; i<e.length; i++) {
+        var m=r.exec( e.substring(i));
+        if (m) {
+            a.push(parseInt("0x"+m[1]));
+            i+=m[0].length-1;
+        } else a.push(e.charCodeAt(i));
+    }
+    return (typeof Buffer!="undefined" && binType===Buffer ? new Buffer(a) : new Uint8Array(a).buffer);
+}
 
 return {
     getQueryString:getQueryString,
     endsWith: endsWith, startsWith: startsWith,
     Base64_To_ArrayBuffer:Base64_To_ArrayBuffer,
     Base64_From_ArrayBuffer:Base64_From_ArrayBuffer,
-    privatize: privatize
+    utf8bytes2str: utf8bytes2str,
+    str2utf8bytes: str2utf8bytes,
+    privatize: privatize,
+    hasNodeBuffer:hasNodeBuffer,
+    isNodeBuffer: isNodeBuffer,
+    isBuffer: isBuffer
 };
 })();
 
+requireSimulator.setName('DataURL');
+define(["extend","assert","Util"],function (extend,assert,Util) {
+    var A=Util.hasNodeBuffer() ? Buffer :ArrayBuffer;
+    var isNodeBuffer=Util.isNodeBuffer;
+    var isBuffer=Util.isBuffer;
+    var DataURL=function (data, contentType){
+      // data: String/Array/ArrayBuffer
+      if (typeof data=="string") {
+          this.url=data;
+          this.binType=contentType || A;
+          this.dataURL2bin(data);
+      } else if (data && isBuffer(data.buffer)) {
+          this.buffer=data.buffer;
+          assert.is(contentType,String);
+          this.contentType=contentType;
+          this.bin2dataURL(this.buffer, this.contentType);
+      } else if (isBuffer(data)) {
+          this.buffer=data;
+          assert.is(contentType,String);
+          this.contentType=contentType;
+          this.bin2dataURL(this.buffer, this.contentType);
+      } else {
+          console.log(arguments);
+          assert.fail("Invalid args: ",arguments);
+      }
+   };
+   DataURL.isBuffer=isBuffer;
+   extend(DataURL.prototype,{
+      bin2dataURL: function (b, contentType) {
+          assert(isBuffer(b));
+          assert.is(contentType,String);
+  	     var head=this.dataHeader(contentType);
+	     var base64=Base64_From_ArrayBuffer(b);
+	     assert.is(base64,String);
+	     return this.url=head+base64;
+	  },
+	  dataURL2bin: function (dataURL) {
+          assert.is(arguments,[String]);
+	      var reg=/^data:([^;]+);base64,/i;
+	      var r=reg.exec(dataURL);
+	      assert(r, ["malformed dataURL:", dataURL] );
+	      this.contentType=r[1];
+	      this.buffer=Base64_To_ArrayBuffer(dataURL.substring(r[0].length) , this.binType);
+          return assert.is(this.buffer , this.binType);
+  	  },
+  	  dataHeader: function (ctype) {
+	      assert.is(arguments,[String]);
+	      return "data:"+ctype+";base64,";
+   	  },
+   	  toString: function () {return assert.is(this.url,String);}
+   });
+
+	function Base64_To_ArrayBuffer(base64, binType){
+	    var A=binType;
+	    base64=base64.replace(/[\n=]/g,"");
+	    var dic = new Object();
+	    dic[0x41]= 0; dic[0x42]= 1; dic[0x43]= 2; dic[0x44]= 3; dic[0x45]= 4; dic[0x46]= 5; dic[0x47]= 6; dic[0x48]= 7; dic[0x49]= 8; dic[0x4a]= 9; dic[0x4b]=10; dic[0x4c]=11; dic[0x4d]=12; dic[0x4e]=13; dic[0x4f]=14; dic[0x50]=15;
+	    dic[0x51]=16; dic[0x52]=17; dic[0x53]=18; dic[0x54]=19; dic[0x55]=20; dic[0x56]=21; dic[0x57]=22; dic[0x58]=23; dic[0x59]=24; dic[0x5a]=25; dic[0x61]=26; dic[0x62]=27; dic[0x63]=28; dic[0x64]=29; dic[0x65]=30; dic[0x66]=31;
+	    dic[0x67]=32; dic[0x68]=33; dic[0x69]=34; dic[0x6a]=35; dic[0x6b]=36; dic[0x6c]=37; dic[0x6d]=38; dic[0x6e]=39; dic[0x6f]=40; dic[0x70]=41; dic[0x71]=42; dic[0x72]=43; dic[0x73]=44; dic[0x74]=45; dic[0x75]=46; dic[0x76]=47;
+	    dic[0x77]=48; dic[0x78]=49; dic[0x79]=50; dic[0x7a]=51; dic[0x30]=52; dic[0x31]=53; dic[0x32]=54; dic[0x33]=55; dic[0x34]=56; dic[0x35]=57; dic[0x36]=58; dic[0x37]=59; dic[0x38]=60; dic[0x39]=61; dic[0x2b]=62; dic[0x2f]=63;
+	    var num = base64.length;
+	    var n = 0;
+	    var b = 0;
+	    var e;
+
+	    if(!num) return (new A(0));
+	    //if(num < 4) return null;
+	    //if(num % 4) return null;
+
+	    // AA     12    1
+	    // AAA    18    2
+	    // AAAA   24    3
+	    // AAAAA  30    3
+	    // AAAAAA 36    4
+	    // num*6/8
+	    e = Math.floor(num / 4 * 3);
+	    if(base64.charAt(num - 1) == '=') e -= 1;
+	    if(base64.charAt(num - 2) == '=') e -= 1;
+
+	    var ary_buffer = new A( e );
+	    var ary_u8 = (Util.isNodeBuffer(ary_buffer) ? ary_buffer : new Uint8Array( ary_buffer ));
+	    var i = 0;
+	    var p = 0;
+	    while(p < e){
+	        b = dic[base64.charCodeAt(i)];
+	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i));//return null;
+	        n = (b << 2);
+	        i ++;
+
+	        b = dic[base64.charCodeAt(i)];
+	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i))
+            ary_u8[p] = n | ((b >> 4) & 0x3);
+	        /*if (p==0) {
+	            console.log("WOW!", n | ((b >> 4) & 0x3), ary_u8[p]);
+	        }*/
+	        n = (b & 0x0f) << 4;
+	        i ++;
+	        p ++;
+	        if(p >= e) break;
+
+	        b = dic[base64.charCodeAt(i)];
+	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i))
+	        ary_u8[p] = n | ((b >> 2) & 0xf);
+	        n = (b & 0x03) << 6;
+	        i ++;
+	        p ++;
+	        if(p >= e) break;
+
+	        b = dic[base64.charCodeAt(i)];
+	        if(b === undefined) fail("Invalid letter: "+base64.charCodeAt(i))
+	        ary_u8[p] = n | b;
+	        i ++;
+	        p ++;
+	    }
+	    function fail(m) {
+	        console.log(m);
+	        console.log(base64,i);
+	        throw new Error(m);
+	    }
+        //console.log("WOW!", ary_buffer[0],ary_u8[0], ary_buffer===ary_u8.buffer);
+	    if (binType===Uint8Array) {
+	        return ary_u8;
+	    }
+	    return ary_buffer;
+	}
+	function Base64_From_ArrayBuffer(ary_buffer){
+		var dic = [
+			'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P',
+			'Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f',
+			'g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v',
+			'w','x','y','z','0','1','2','3','4','5','6','7','8','9','+','/'
+		];
+		var base64 = "";
+		var ary_u8 = Util.isNodeBuffer(ary_buffer) ? ary_buffer : new Uint8Array( ary_buffer );
+		var num = ary_u8.length;
+		var n = 0;
+		var b = 0;
+
+		var i = 0;
+		while(i < num){
+			b = ary_u8[i];
+			base64 += dic[(b >> 2)];
+			n = (b & 0x03) << 4;
+			i ++;
+			if(i >= num) break;
+
+			b = ary_u8[i];
+			base64 += dic[n | (b >> 4)];
+			n = (b & 0x0f) << 2;
+			i ++;
+			if(i >= num) break;
+
+			b = ary_u8[i];
+			base64 += dic[n | (b >> 6)];
+			base64 += dic[(b & 0x3f)];
+			i ++;
+		}
+
+		var m = num % 3;
+		if(m){
+			base64 += dic[n];
+		}
+		if(m == 1){
+			base64 += "==";
+		}else if(m == 2){
+			base64 += "=";
+		}
+		return base64;
+	}
+    return DataURL;
+});
+requireSimulator.setName('Content');
+define(["DataURL","Util","assert"],function (DataURL,Util,assert) {
+    var Content=function () {};
+    var isNodeBuffer=Util.isNodeBuffer;
+    var isBuffer=Util.isBuffer;
+
+    Content.plainText=function (s,contentType){
+        var b=new Content;
+        b.contentType=contentType||"text/plain";
+        b.plain=s;
+        return b;
+    };
+    Content.url=function (s) {
+        var b=new Content;
+        b.url=s;
+        return b;
+    };
+    Content.buffer2ArrayBuffer = function (a) {
+        if (Util.isBuffer(a)) {
+            return assert(new Uint8Array(a).buffer,"n2a: buf is not set");
+        }
+        return assert(a,"n2a: a is not set");
+    };
+    Content.arrayBuffer2Buffer= function (a) {
+        if (a instanceof ArrayBuffer) {
+            var b=new Buffer(new Uint8Array(a));
+            return b;
+        }
+        return assert(a,"a2n: a is not set");
+    };
+
+    Content.bin=function (bin, contentType) {
+        assert(contentType, "contentType should be set");
+        var b=new Content;
+        if (bin && isBuffer(bin.buffer)) {
+            b.arrayBuffer=bin.buffer;
+        } else if (Util.isNodeBuffer(bin)) {
+            b.nodeBuffer=bin;
+        } else if (bin instanceof ArrayBuffer) {
+            b.arrayBuffer=bin;
+        } else {
+            throw new Error(bin+" is not a bin");
+        }
+        b.contentType=contentType;
+        return b;
+    };
+
+    var p=Content.prototype;
+    p.toBin = function (binType) {
+        binType=binType || (Util.hasNodeBuffer() ? Buffer: ArrayBuffer);
+        if (this.nodeBuffer) {
+            if (binType===Buffer) {
+                return this.nodeBuffer;
+            } else {
+                return this.arrayBuffer=( Content.buffer2ArrayBuffer(this.nodeBuffer) );
+            }
+        } else if (this.arrayBuffer) {
+            if (binType===ArrayBuffer) {
+                return this.arrayBuffer;
+            } else {
+                return this.nodeBuffer=( Content.arrayBuffer2Buffer(this.arrayBuffer) );
+            }
+        } else if (this.url) {
+            var d=new DataURL(this.url, binType);
+            return this.setBuffer(d.buffer);
+        } else if (this.plain!=null) {
+            return this.setBuffer( Util.str2utf8bytes(this.plain, binType) );
+        }
+        throw new Error("No data");
+    };
+    p.setBuffer=function (b) {
+        assert(b,"b is not set");
+        if (Util.isNodeBuffer(b)) {
+            return this.nodeBuffer=b;
+        } else {
+            return this.arrayBuffer=b;
+        }
+    };
+    p.toArrayBuffer=function () {
+        return this.toBin(ArrayBuffer);
+    };
+    p.toNodeBuffer=function () {
+        return this.toBin(Buffer);
+    };
+    p.toURL=function () {
+        if (this.url) {
+            return this.url;
+        } else {
+            if (!this.arrayBuffer && this.plain!=null) {
+                this.arrayBuffer=Util.str2utf8bytes(this.plain,ArrayBuffer);
+            }
+            if (this.arrayBuffer || this.nodeBuffer) {
+                var d=new DataURL(this.arrayBuffer || this.nodeBuffer,this.contentType);
+                return this.url=d.url;
+            }
+        }
+        throw new Error("No data");
+    };
+    p.toPlainText=function () {
+        if (this.plain!=null) {
+            return this.plain;
+        } else {
+            if (this.url && !this.hasBin() ) {
+                var d=new DataURL(this.url,ArrayBuffer);
+                this.arrayBuffer=d.buffer;
+            }
+            if (this.hasBin()) {
+                return this.plain=Util.utf8bytes2str(
+                        this.nodeBuffer || new Uint8Array(this.arrayBuffer)
+                );
+            }
+        }
+        throw new Error("No data");
+    };
+    p.hasURL=function (){return this.url;};
+    p.hasPlainText=function (){return this.plain!=null;};
+    p.hasBin=function (){return this.nodeBuffer || this.arrayBuffer;};
+    p.hasNodeBuffer= function () {return this.nodeBuffer;}
+    p.hasArrayBuffer= function () {return this.arrayBuffer;}
+    return Content;
+});
+/*
+requirejs(["Content"], function (C) {
+   var s="てすとabc";
+   var c1=C.plainText(s);
+   test(c1,[s]);
+
+   function test(c,path) {
+       var p=c.toPlainText();
+       var u=c.toURL();
+       var a=c.toArrayBuffer();
+       var n=c.toNodeBuffer();
+       console.log(path,"->",p,u,a,n);
+       var c1=C.plainText(p);
+       var c2=C.url(u);
+       var c3=C.bin(a,"text/plain");
+       var c4=C.bin(n,"text/plain");
+       if (path.length<2) {
+           test(c1, path.concat([p]));
+           test(c2, path.concat([u]));
+           test(c3, path.concat([a]));
+           test(c4, path.concat([n]));
+       }
+
+   }
+
+});
+*/
 requireSimulator.setName('SFile');
-define(["Contents","extend","assert","PathUtil","Util"],
-function (C,extend,A,P,Util) {
+define(["extend","assert","PathUtil","Util","Content"],
+function (extend,A,P,Util,Content) {
 
 var SFile=function (fs, path) {
     A.is(path, P.Absolute);
@@ -998,20 +1200,41 @@ SFile.prototype={
     },
     setText:function (t) {
         A.is(t,String);
-        this.fs.setContent(this.path(), t);
+        if (this.isText()) {
+            this.fs.setContent(this.path(), Content.plainText(t));
+        } else {
+            this.fs.setContent(this.path(), Content.url(t));
+        }
     },
-    getText:function (t) {
-        return this.fs.getContent(this.path(), {type:String});
+    getContent: function (f) {
+        if (typeof f=="function") {
+            return this.fs.getContentAsync(this.path()).then(f);
+        }
+        return this.fs.getContent(this.path());
+    },
+    setContent: function (c) {
+        return this.fs.setContentAsync(this.path(),c);
+    },
+
+    getText:function () {
+        if (this.isText()) {
+            return this.fs.getContent(this.path()).toPlainText();
+        } else {
+            return this.fs.getContent(this.path()).toURL();
+        }
     },
     isText: function () {
         return this.fs.isText(this.path());
     },
-    setBytes:function (b) {
-        A.is(t,ArrayBuffer);
-        return this.fs.setContent(b);
+    contentType: function () {
+        return this.fs.getContentType(this.path());
     },
-    getBytes:function (t) {
-        return this.fs.getContent(this.path(), {type:ArrayBuffer});
+    setBytes:function (b) {
+        return this.fs.setContent(this.path(), Content.bin(b,this.contentType()));
+    },
+    getBytes:function (options) {
+        options=options||{};
+        return this.fs.getContent(this.path()).toBin(options.binType);
     },
     getURL: function () {
         return this.fs.getURL(this.path());
@@ -1029,11 +1252,11 @@ SFile.prototype={
             file.text(JSON.stringify(A.is(arguments[0],Object) ));
         }
     },
-    copyTo: function (dst, options) {
-        return dst.copyFrom(this,options);
-    },
     copyFrom: function (src, options) {
-        var dst=this;
+        return src.copyTo(this,options);
+    },
+    copyTo: function (dst, options) {
+        var src=this;
         var options=options||{};
         var srcIsDir=src.isDir();
         var dstIsDir=dst.isDir();
@@ -1171,6 +1394,10 @@ requireSimulator.setName('FS2');
 define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M,assert,SFile){
     var FS=function () {
     };
+    var fstypes={};
+    FS.addFSType=function (name,fsgen) {
+        fstypes[name]=fsgen;
+    };
     function stub(n) {
         throw new Error (n+" is STUB!");
     }
@@ -1178,9 +1405,25 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         err: function (path, mesg) {
             throw new Error(path+": "+mesg);
         },
+        fstype:function () {
+            return "Unknown";
+        },
         // mounting
         fstab: function () {
             return this._fstab=this._fstab||[];//[{fs:this, path:P.SEP}];
+        },
+        unmount: function (path, options) {
+            assert.is(arguments,[P.AbsDir] );
+            var t=this.fstab();
+            console.log(t);
+            for (var i=0; i<t.length; i++) {
+                console.log(t[i].path, path)
+                if (t[i].path==path) {
+                    t.splice(i,1);
+                    return true;
+                }
+            }
+            return false;
         },
         resolveFS:function (path, options) {
             assert.is(path,P.Absolute);
@@ -1196,6 +1439,9 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         isReadOnly: function (path, options) {// mainly for check ENTIRELY read only
             stub("isReadOnly");
+        },
+        supportsSync: function () {
+            return true;
         },
         mounted: function (parentFS, mountPoint ) {
             assert.is(arguments,[FS,P.AbsDir]);
@@ -1235,11 +1481,22 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         getContent: function (path, options) {
             // options:{type:String|DataURL|ArrayBuffer|OutputStream|Writer}
             // succ : [type],
-            stub("");
+            stub("getContent");
+        },
+        getContentAsync: function (path, options) {
+            if (!this.supportsSync()) stub("getContentAsync");
+            return $.when(this.getContent.apply(this,arguments));
         },
         setContent: function (path, content, options) {
             // content: String|ArrayBuffer|InputStream|Reader
             stub("");
+        },
+        setContentAsync: function (path, content, options) {
+            var t=this;
+            if (!t.supportsSync()) stub("setContentAsync");
+            return $.when(content).then(function (content) {
+                return $.when(t.setContent(path,content,options));
+            });
         },
         getMetaInfo: function (path, options) {
             stub("");
@@ -1263,19 +1520,32 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
         },
         cp: function(path, dst, options) {
             assert.is(arguments,[P.Absolute,P.Absolute]);
+            this.assertExist(path);
             options=options||{};
             var srcIsDir=this.isDir(path);
-            var dstIsDir=this.resolveFS(dst).isDir(dst);
+            var dstfs=this.getRootFS().resolveFS(dst);
+            var dstIsDir=dstfs.isDir(dst);
             if (!srcIsDir && !dstIsDir) {
-                var cont=this.getContent(path);
-                var res=this.resolveFS(dst).setContent(dst,cont);
-                if (options.a) {
-                    //console.log("-a", this.getMetaInfo(path));
-                    this.setMetaInfo(dst, this.getMetaInfo(path));
+                if (this.supportsSync() && dstfs.supportsSync()) {
+                    var cont=this.getContent(path);
+                    var res=dstfs.setContent(dst,cont);
+                    if (options.a) {
+                        dstfs.setMetaInfo(dst, this.getMetaInfo(path));
+                    }
+                    return res;
+                } else {
+                    return dstfs.setContentAsync(
+                            dst,
+                            this.getContentAsync(path)
+                    ).then(function (res) {
+                        if (options.a) {
+                            return dstfs.setMetaInfo(dst, this.getMetaInfo(path));
+                        }
+                        return res;
+                    });
                 }
-                return res;
             } else {
-                throw "only file to file supports";
+                throw new Error("only file to file supports");
             }
         },
         mv: function (path,to,options) {
@@ -1316,8 +1586,13 @@ define(["extend","PathUtil","MIMETypes","assert","SFile"],function (extend, P, M
             if (this.isReadOnly(path)) this.err(path, "read only.");
         },
         mount: function (path, fs, options) {
-            assert.is(arguments,[P.AbsDir, FS] );
-            if (this.exists(path)) {
+            assert.is(arguments,[P.AbsDir] );
+            if (typeof fs=="string") {
+                var fact=assert( fstypes[fs] ,"fstype "+fs+" is undefined.");
+                fs=fact(path, options||{});
+            }
+            assert.is(fs,FS);
+            if (!P.isURL(path) && this.exists(path)) {
                 throw new Error(path+": Directory exists");
             }
             var parent=P.up(path);
@@ -1501,9 +1776,14 @@ define([], function () {
         }
         WebSite.logdir="/var/log/Tonyu/";
         WebSite.wwwDir=WebSite.cwd+"www/";
-        WebSite.kernelDir=WebSite.wwwDir+"Kernel/";
-        WebSite.ffmpeg=WebSite.cwd+("ffmpeg/bin/ffmpeg.exe");
+        WebSite.platform=process.platform;
+        WebSite.ffmpeg=WebSite.cwd+(WebSite.platform=="win32"?
+                "ffmpeg/bin/ffmpeg.exe":"ffmpeg/bin/ffmpeg");
+    } else {
+        WebSite.wwwDir=location.protocol+"//"+location.host+"/";
     }
+    WebSite.kernelDir=WebSite.wwwDir+"Kernel/";
+
     if (loc.match(/tonyuedit\.appspot\.com/) ||
         loc.match(/localhost:888/) ||
         WebSite.isNW) {
@@ -1515,8 +1795,8 @@ define([], function () {
 });
 
 requireSimulator.setName('NativeFS');
-define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
-        function (FS,A,P,extend,MIME,DataURL) {
+define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL","Content"],
+        function (FS,A,P,extend,MIME,DataURL,Content) {
     var available=(typeof process=="object" && process.__node_webkit);
     if (!available) {
         return function () {
@@ -1540,11 +1820,27 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
         A.is(path, P.Absolute);
         return P.rel( this.rootPoint, this.relFromMountPoint(path));
     };
+    Pro.arrayBuffer2Buffer= function (a) {
+        if (a instanceof ArrayBuffer) {
+            console.log("WOW3!", a[0]);
+            var b=new Buffer(new Uint8Array(a));
+            console.log("WOW4!", b[0]);
+            return b;
+        }
+        return a;
+    };
+
     /*Pro.isText=function (path) {
         var e=P.ext(path);
         var m=MIME[e];
         return P.startsWith( m, "text");
     };*/
+    FS.addFSType("NativeFS",function (path, options) {
+            return new NativeFS(options.r);
+    });
+    NativeFS.prototype.fstype=function () {
+        return "Native"+(this.rootPoint?"("+this.rootPoint+")":"");
+    };
     FS.delegateMethods(NativeFS.prototype, {
         getReturnTypes: function(path, options) {
             assert.is(arguments,[String]);
@@ -1556,46 +1852,23 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
             options=options||{};
             A.is(path,P.Absolute);
             var np=this.toNativePath(path);
-            var t=options.type;
+            this.assertExist(path);
             if (this.isText(path)) {
-                if (t===String) {
-                    return fs.readFileSync(np, {encoding:"utf8"});
-                } else {
-                    return fs.readFileSync(np);
-                    //TODOvar bin=fs.readFileSync(np);
-                    //throw new Error("TODO: handling bin file "+path);
-                }
+                return Content.plainText( fs.readFileSync(np, {encoding:"utf8"}) );
             } else {
-                if (t===String) {
-                    var bin=fs.readFileSync(np);
-                    var d=new DataURL(bin, this.getContentType(path) );
-                    return d.url;
-                } else {
-                    return fs.readFileSync(np);
-                }
+                return Content.bin( fs.readFileSync(np) , this.getContentType(path));
             }
         },
         setContent: function (path,content) {
-            A.is(path,P.Absolute);
+            A.is(arguments,[P.Absolute,Content]);
             var pa=P.up(path);
             if (pa) this.getRootFS().mkdir(pa);
             var np=this.toNativePath(path);
-            var cs=typeof content=="string";
-            if (this.isText(path)) {
-                fs.writeFileSync(np, content)
-                /*if (cs) return fs.writeFileSync(np, content);
-                else {
-                    return fs.writeFileSync(np, content);
-                    //throw new Error("TODO");
-                }*/
+            if (content.hasBin() || !content.hasPlainText() ) {
+                fs.writeFileSync(np, content.toNodeBuffer() );
             } else {
-//                console.log("NatFS", cs, content);
-                if (!cs) return fs.writeFileSync(np, content);
-                else {
-                    var d=new DataURL(content);
-                    //console.log(d.buffer);
-                    return fs.writeFileSync(np, d.buffer);
-                }
+                // !hasBin && hasText
+                fs.writeFileSync(np, content.toPlainText());
             }
         },
         getMetaInfo: function(path, options) {
@@ -1685,7 +1958,8 @@ define(["FS2","assert","PathUtil","extend","MIMETypes","DataURL"],
     return NativeFS;
 });
 requireSimulator.setName('LSFS');
-define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,assert,DataURL) {
+define(["FS2","PathUtil","extend","assert","Util","Content"],
+        function(FS,P,extend,assert,Util,Content) {
     var LSFS = function(storage,options) {
     	this.storage=storage;
     	this.options=options||{};
@@ -1705,6 +1979,13 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
         s[P.SEP]="{}";
         return new LSFS(s);
     };
+    FS.addFSType("localStorage",function (path, options) {
+        return new LSFS(localStorage);
+    });
+    FS.addFSType("ramDisk",function (path, options) {
+        return LSFS.ramDisk();
+    });
+
     LSFS.now=now;
     LSFS.prototype=new FS;
     //private methods
@@ -1801,6 +2082,13 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
             this.putDirInfo(path, dinfo, true);
         }
     };
+    LSFS.prototype.isRAM=function (){
+        return this.storage!==localStorage;
+    };
+    LSFS.prototype.fstype=function () {
+        return (this.isRAM() ? "ramDisk" : "localStorage" );
+    };
+
     // public methods (with resolve fs)
     FS.delegateMethods(LSFS.prototype, {
         isReadOnly: function () {return this.options.readOnly;},
@@ -1813,16 +2101,22 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
         getContent: function(path, options) {
             assert.is(arguments,[Absolute]);
             this.assertExist(path);
-            if (options && options.type==ArrayBuffer) {
-                var d=new DataURL(this.getItem(path));
-                return d.buffer;
+            var c;
+            if (this.isText(path)) {
+                c=Content.plainText(this.getItem(path));
+            } else {
+                c=Content.url(this.getItem(path));
             }
-            return this.getItem(path);
+            return c;
         },
         setContent: function(path, content, options) {
-            assert.is(arguments,[Absolute,String]);
+            assert.is(arguments,[Absolute,Content]);
             this.assertWriteable(path);
-            this.setItem(path, content);
+            if (this.isText(path)) {
+                this.setItem(path, content.toPlainText());
+            } else {
+                this.setItem(path, content.toURL());
+            }
             this.touch(path);
         },
         getMetaInfo: function(path, options) {
@@ -1971,7 +2265,7 @@ define(["FS2","PathUtil","extend","assert","DataURL"], function(FS,P,extend,asse
             }
         },
         getURL: function (path) {
-            return this.getContent(path,{type:String});
+            return this.getContent(path).toURL();
         }
     });
     return LSFS;
@@ -2019,6 +2313,7 @@ define(["FS2","WebSite","NativeFS","LSFS", "PathUtil","Env","assert","SFile"],
     } else {
         rootFS=new LSFS(localStorage);
     }
+    FS.getRootFS=function () {return rootFS;};
     FS.get=function () {
         return rootFS.get.apply(rootFS,arguments);
     };
@@ -2036,6 +2331,9 @@ define(["FS2","WebSite","NativeFS","LSFS", "PathUtil","Env","assert","SFile"],
     };
     FS.mount=function () {
         return rootFS.mount.apply(rootFS,arguments);
+    };
+    FS.unmount=function () {
+        return rootFS.unmount.apply(rootFS,arguments);
     };
     return FS;
 });
@@ -2172,7 +2470,8 @@ return Tonyu=function () {
         function waitFor(j) {
             _isWaiting=true;
             suspend();
-            if (j && j.addTerminatedListener) j.addTerminatedListener(function () {
+            if (!j) return;
+            if (j.addTerminatedListener) j.addTerminatedListener(function () {
                 _isWaiting=false;
                 if (fb.group) fb.group.notifyResume();
                 else if (isAlive()) {
@@ -2184,6 +2483,22 @@ return Tonyu=function () {
                 }
                 //fb.group.add(fb);
             });
+            else if (j.then && j.fail) {
+                j.then(function (r) {
+                    fb.retVal=r;
+                    steps();
+                });
+                j.fail(function (e) {
+                    if (e instanceof Error) {
+                        gotoCatch(e);
+                    } else {
+                        var re=new Error(e);
+                        re.original=e;
+                        gotoCatch(re);
+                    }
+                    steps();
+                });
+            }
         }
         function setGroup(g) {
             fb.group=g;
@@ -2457,18 +2772,18 @@ return Tonyu=function () {
         var res;
         res=(init?
             (parent? function () {
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
                 if (Tonyu.runMode) init.apply(this,arguments);
                 else parent.apply(this,arguments);
             }:function () {
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
                 if (Tonyu.runMode) init.apply(this,arguments);
             }):
             (parent? function () {
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
                 parent.apply(this,arguments);
             }:function (){
-                if (!(this instanceof res)) useNew();
+                if (!(this instanceof res)) useNew(fullName);
             })
         );
         nso[shortName]=res;
@@ -2589,8 +2904,8 @@ return Tonyu=function () {
         }
         return res;
     }
-    function useNew() {
-        throw new Error("クラス名はnewをつけて呼び出して下さい。");
+    function useNew(c) {
+        throw new Error("クラス名"+c+"はnewをつけて呼び出して下さい。");
     }
     function not_a_tonyu_object(o) {
         console.log("Not a tonyu object: ",o);
@@ -2619,7 +2934,7 @@ return Tonyu=function () {
             timeout:timeout,animationFrame:animationFrame, asyncResult:asyncResult,bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             run:run,
-            VERSION:1448500513331,//EMBED_VERSION
+            VERSION:1449368686631,//EMBED_VERSION
             A:A};
 }();
 });
@@ -6412,6 +6727,15 @@ define([], function () {
                 setTimeout(function () {d.resolve(v);},0);
                 return d.promise();
             },
+            funcPromise:function (f) {
+                var d=new $.Deferred;
+                f(function (v) {
+                    d.resolve(v);
+                },function (e) {
+                    d.reject(e);
+                });
+                return d.promise();
+            },
             throwPromise:function (e) {
                 d=new $.Deferred;
                 setTimeout(function () {
@@ -7331,7 +7655,7 @@ define([],function () {
     return draw;
 });
 requireSimulator.setName('thumbnail');
-define(["ImageRect"],function (IR) {
+define(["ImageRect","Content"],function (IR,Content) {
     var TN={};
     var createThumbnail;
     var NAME="$icon_thumbnail";
@@ -7355,11 +7679,10 @@ define(["ImageRect"],function (IR) {
             var cv=$("<canvas>").attr({width:100,height:100});
             IR(img, cv[0]);
             var url=cv[0].toDataURL();
-            //window.open(url);
             var rsrc=prj.getResource();
             var prjdir=prj.getDir();
             var imfile=TN.file(prj);
-            imfile.text(url);
+            imfile.text( url );
             var item={
                 name:NAME,
                 pwidth:100,pheight:100,url:"ls:"+imfile.relPath(prjdir)
@@ -7378,6 +7701,7 @@ define(["ImageRect"],function (IR) {
             console.log("setRSRC",rsrc);
         } catch (e) {
             console.log("Create thumbnail failed",e);
+            console.log(e.stack);
         }
     };
     return TN;
@@ -7765,7 +8089,8 @@ if (typeof getReq=="function") getReq.exports("Tonyu.Project");
 });
 
 requireSimulator.setName('Shell');
-define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
+define(["FS","Util","WebSite","PathUtil","assert"],
+        function (FS,Util,WebSite,PathUtil,assert) {
     var Shell={cwd:FS.get("/")};
     Shell.cd=function (dir) {
         Shell.cwd=resolve(dir,true);
@@ -7776,10 +8101,31 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
         if (mustExist && !r.exists()) throw r+": no such file or directory";
         return r;
     }
+
+    Shell.mount=function (path, options) {
+        //var r=resolve(path);
+        if (!options || !options.t) {
+            sh.err("-t=[fstype] should be specified.");
+            return;
+        }
+        FS.mount(path,options.t, options);
+    };
+    Shell.unmount=function (path) {
+        FS.unmount(path);
+    };
+    Shell.fstab=function () {
+        var rfs=FS.getRootFS();
+        var t=rfs.fstab();
+        var sh=this;
+        sh.echo(rfs.fstype()+"\t"+"<Root>");
+        t.forEach(function (te) {
+            sh.echo(te.fs.fstype()+"\t"+te.path);
+        });
+    }
     Shell.resolve=resolve;
     function resolve2(v) {
         if (typeof v!="string") return v;
-        if (Util.startsWith(v,"/")) return FS.get(v);
+        if (PathUtil.isAbsolutePath(v)) return FS.get(v);
         var c=Shell.cwd;
         /*while (Util.startsWith(v,"../")) {
             c=c.up();
@@ -7805,29 +8151,6 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
         var t=resolve(to);
         return f.copyTo(t,options);
 
-        /*if (f.isDir() && t.isDir()) {
-            var sum=0;
-            f.recursive(function (src) {
-                var rel=src.relPath(f);
-                var dst=t.rel(rel);
-                if (options.test || options.v) {
-                    Shell.echo((dst.exists()?"[ovr]":"[new]")+dst+"<-"+src);
-                }
-                if (!options.test) {
-                    dst.copyFrom(src,options);
-                }
-                sum++;
-            });
-            return sum;
-        } else if (!f.isDir() && !t.isDir()) {
-            t.text(f.text());
-            return 1;
-        } else if (!f.isDir() && t.isDir()) {
-            t.rel(f.name()).text(f.text());
-            return 1;
-        } else {
-            throw "Cannot copy directory "+f+" to file "+t;
-        }*/
     };
     Shell.rm=function (file, options) {
         if (!options) options={};
@@ -7855,7 +8178,6 @@ define(["FS","Util","WebSite"],function (FS,Util,WebSite) {
     Shell.cat=function (file,options) {
         file=resolve(file, true);
         Shell.echo(file.text());
-        //else return file.text();
     };
     Shell.resolve=function (file) {
 	if (!file) file=".";
@@ -7958,7 +8280,7 @@ define([],function () {
 	return KEC;
 });
 requireSimulator.setName('ScriptTagFS');
-define([],function () {
+define(["Content"],function (Content) {
 	var STF={};
 	STF.toObj=function () {
 	    var scrs=$("script");
@@ -7997,7 +8319,11 @@ define([],function () {
 	    var o=STF.toObj();
 	    for (var fn in o) {
             var f=dir.rel(fn);
-            f.text(o[fn].text);
+            if (f.isText()) {
+                f.text(o[fn].text);
+            } else {
+                f.setBytes(Content.url(o[fn].text).toByteArray() );
+            }
         }
 	};
 	return STF;
@@ -8592,8 +8918,305 @@ setTimeout(function(){ T2MediaLib.stopAudio(); }, 10000);
 
 
 
+requireSimulator.setName('exceptionCatcher');
+define([], function () {
+    var res={};
+    res.f=function (f) {
+        if (typeof f=="function") {
+            if (f.isTrcf) return f;
+            var r=function () {
+                if (res.handleException && !res.enter) {
+                    try {
+                        res.enter=true;
+                        return f.apply(this,arguments);
+                    } catch (e) {
+                        res.handleException(e);
+                    } finally {
+                        res.enter=false;
+                    }
+                } else {
+                    return f.apply(this,arguments);
+                }
+            };
+            r.isTrcf=true;
+            return r;
+        } else if(typeof f=="object") {
+            for (var k in f) {
+                f[k]=res.f(f[k]);
+            }
+            return f;
+        }
+    };
+    //res.handleException=function (){};
+    return res;
+});
+requireSimulator.setName('UI');
+define(["Util","exceptionCatcher"],function (Util, EC) {
+    var UI={};
+    var F=EC.f;
+    UI=function () {
+        var expr=[];
+        for (var i=0 ; i<arguments.length ; i++) {
+            expr[i]=arguments[i];
+        }
+        var listeners=[];
+        var $vars={};
+        var $edits=[];
+        var res=parse(expr);
+        res.$edits=$edits;
+        res.$vars=$vars;
+        $edits.load=function (model) {
+            $edits.model=model;
+            $edits.forEach(function (edit) {
+                $edits.writeToJq(edit.params.$edit, edit.jq);
+            });
+        };
+        $edits.writeToJq=function ($edit, jq) {
+        	var m=$edits.model;
+            if (!m) return;
+            var name = $edit.name;
+            var a=name.split(".");
+            for (var i=0 ; i<a.length ;i++) {
+                m=m[a[i]];
+            }
+            m=$edit.type.toVal(m);
+            if (jq.attr("type")=="checkbox") {
+                jq.prop("checked",!!m);
+            } else {
+                jq.val(m);
+            }
+        };
+        $edits.validator={
+       		errors:{},
+       		show: function () {
+       			if ($vars.validationMessage) {
+       				$vars.validationMessage.empty();
+       				for (var name in this.errors) {
+       					$vars.validationMessage.append(UI("div", this.errors[name].mesg));
+       				}
+       			}
+       			if ($vars.OKButton) {
+       				var ok=true;
+       				for (var name in this.errors) {
+       					ok=false;
+       				}
+       				$vars.OKButton.attr("disabled", !ok);
+       			}
+       		},
+       		on: {
+       			validate: function () {}
+       		},
+       		addError: function (name, mesg, jq) {
+       			this.errors[name]={mesg:mesg, jq:jq};
+       			this.show();
+       		},
+       		removeError: function (name) {
+       			delete this.errors[name];
+       			this.show();
+       		},
+       		allOK: function () {
+       			for (var i in this.errors) {
+       				delete this.errors[i];
+       			}
+       			this.show();
+       		},
+       		isValid: function () {
+       		    var res=true;
+       		    for (var i in this.errors) res=false;
+       		    return res;
+       		}
+        };
+        $edits.writeToModel=function ($edit, val ,jq) {
+            var m=$edits.model;
+        	//console.log($edit, m);
+            if (!m) return;
+            var name = $edit.name;
+            try {
+                val=$edit.type.fromVal(val);
+            } catch (e) {
+            	$edits.validator.addError(name, e, jq);
+            	//$edits.validator.errors[name]={mesg:e, jq:jq};
+                //$edits.validator.change(name, e, jq);
+                return;
+            }
+            $edits.validator.removeError(name);
+            /*
+            if ($edits.validator.errors[name]) {
+                delete $edits.validator.errors[name];
+                $edits.validator.change(name, null, jq);
+            }*/
+            var a=name.split(".");
+            for (var i=0 ; i<a.length ;i++) {
+                if (i==a.length-1) {
+                    if ($edits.on.writeToModel(name,val)) {
+
+                    } else {
+                        m[a[i]]=val;
+                    }
+                } else {
+                    m=m[a[i]];
+                }
+            }
+            $edits.validator.on.validate.call($edits.validator, $edits.model);
+        };
+        $edits.on={};
+        $edits.on.writeToModel= function (name, val) {};
+
+        if (listeners.length>0) {
+            setTimeout(F(l),10);
+        }
+        function l() {
+            listeners.forEach(function (li) {
+                li();
+            });
+            setTimeout(F(l),10);
+        }
+        return res;
+        function parse(expr) {
+            if (expr instanceof Array) return parseArray(expr);
+            else if (typeof expr=="string") return parseString(expr);
+            else return expr;
+        }
+        function parseArray(a) {
+            var tag=a[0];
+            var i=1;
+            var res=$("<"+tag+">");
+            if (typeof a[i]=="object" && !(a[i] instanceof Array) && !(a[i] instanceof $) ) {
+                parseAttr(res, a[i],tag);
+                i++;
+            }
+            while (i<a.length) {
+                res.append(parse(a[i]));
+                i++;
+            }
+            return res;
+        }
+        function parseAttr(jq, o, tag) {
+            if (o.$var) {
+                $vars[o.$var]=jq;
+            }
+            if (o.$edit) {
+                if (typeof o.$edit=="string") {
+                    o.$edit={name: o.$edit, type: UI.types.String};
+                }
+                if (!o.on) o.on={};
+                o.on.realtimechange=F(function (val) {
+                    $edits.writeToModel(o.$edit, val, jq);
+                });
+                if (!$vars[o.$edit.name]) $vars[o.$edit.name]=jq;
+                $edits.push({jq:jq,params:o});
+            }
+            for (var k in o) {
+                if (k=="on") {
+                    for (var e in o.on) on(e, o.on[e]);
+                } else if (k=="css" && o[k]!=null) {//ADDJSL
+                    jq.css(o[k]);
+                } else if (!Util.startsWith(k,"$") && o[k]!=null) {//ADDJSL
+                    jq.attr(k,o[k]);
+                }
+            }
+            function on(eType, li) {
+                if (!li) return; //ADDJSL
+                if (eType=="enterkey") {
+                    jq.on("keypress",F(function (ev) {
+                        if (ev.which==13) li.apply(jq,arguments);
+                    }));
+                } else if (eType=="realtimechange") {
+                    var first=true, prev;
+                    listeners.push(function () {
+                        var cur;
+                        if (o.type=="checkbox") {
+                            cur=!!jq.prop("checked");
+                        } else {
+                            cur=jq.val();
+                        }
+                        if (first || prev!=cur) {
+                            li.apply(jq,[cur,prev]);
+                            prev=cur;
+                        }
+                        first=false;
+                    });
+                } else {
+                    jq.on(eType, F(li));
+                }
+            }
+        }
+        function parseString(str) {
+            return $("<span>").text(str);
+        }
+    };
+    UI.types={
+       String: {
+           toVal: function (val) {
+               return val;
+           },
+           fromVal: function (val) {
+               return val;
+           }
+       },
+       Number: {
+           toVal: function (val) {
+               return val+"";
+           },
+           fromVal: function (val) {
+               return parseFloat(val);
+           }
+       }
+   };
+    return UI;
+});
+
+requireSimulator.setName('UIDiag');
+define(["UI"],function (UI) {
+    var UIDiag={};
+    UIDiag.confirm=function (mesg) {
+        var di=UI("div",{title:"確認"},["div",mesg],
+                ["button",{on:{click:sendF(true)}},"OK"],
+                ["button",{on:{click:sendF(false)}},"キャンセル"]).dialog({width:"auto",close:sendF(false)});
+        var d=$.Deferred();
+        function sendF(r) {
+            return function () { d.resolve(r); di.dialog("close"); di.remove(); };
+        }
+        return d.promise();
+    };
+    UIDiag.alert=function (mesg) {
+        var di=UI("div",{title:"確認"},["div",mesg],
+                ["button",{on:{click:sendF(true)}},"OK"]).dialog({width:"auto",close:sendF(false)});
+        var d=$.Deferred();
+        function sendF(r) {
+            return function () { d.resolve(r); di.dialog("close"); di.remove(); };
+        }
+        return d.promise();
+    };
+
+    UIDiag.prompt=function (mesg,value) {
+        var di=UI("div",{title:"入力"},["div",mesg],
+                ["input",{on:{enterkey:ok},$var:"val", value:value}],["br"],
+                ["button",{on:{click:ok}},"OK"],
+                ["button",{on:{click:cancel}},"キャンセル"]).dialog({width:"auto",close:function (){
+                    di.dialog("close");
+                    d.resolve();
+                }});
+        var d=$.Deferred();
+        function ok() {
+            var r=di.$vars.val.val();
+            d.resolve(r);
+            di.dialog("close");
+            di.remove();
+        }
+        function cancel() {
+            di.dialog("close");
+            di.remove();
+            d.resolve();
+        }
+        return d.promise();
+
+    };
+    if (typeof window!="undefined") window.UIDiag=UIDiag;
+    return UIDiag;
+});
 requireSimulator.setName('runtime');
-requirejs(["ImageList","T2MediaLib","Tonyu","Tonyu.Iterator"], function () {
+requirejs(["ImageList","T2MediaLib","Tonyu","Tonyu.Iterator","UIDiag"], function () {
 
 });
 requireSimulator.setName('runScript');
