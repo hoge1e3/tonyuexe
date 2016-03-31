@@ -4,6 +4,7 @@ import java.util.Date;
 
 import jp.tonyu.edit.CountingEntityIterable;
 import jp.tonyu.edit.EQ;
+import jp.tonyu.fs.GLSFile;
 import jp.tonyu.cartridges.UploadClient;
 
 import com.google.appengine.api.datastore.DatastoreService;
@@ -51,14 +52,16 @@ public class ProjectInfo {
         return EQ.$(res);
     }
     public static void put(String user,String prjName, String prjTitle, String desc, String thumb,
-            boolean  publishToList ,boolean allowFork, String license) {
+            boolean  publishToList ,boolean allowFork, String license,String dssKey) {
         EQ e=get(user, prjName, true).
                 attr(KEY_PRJ_TITLE,prjTitle).
                 attr(KEY_PRJ_DESC,desc).
                 attr(KEY_THUMB,thumb).
                 attr(KEY_PUBLIST, publishToList).
                 attr(KEY_ALLOW_FORK,allowFork).
-                attr(KEY_LICENSE,license).attr(KEY_LASTUPDATE, new Date());
+                attr(KEY_LICENSE,license).
+                attr(GLSFile.KEY_DATASTORE_KEY,dssKey).
+                attr(KEY_LASTUPDATE, new Date());
         dss.put(e.get());
     }
     public static Iterable<Entity>  listPublished(String user) {

@@ -7,10 +7,14 @@ import java.io.PrintWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.mozilla.javascript.Scriptable;
+
 import jp.tonyu.auth.Auth;
 import jp.tonyu.auth.RequestSigner;
 import jp.tonyu.cartridges.UploadClient;
 import jp.tonyu.edit.FS;
+import jp.tonyu.fs.GLSFile;
+import jp.tonyu.js.Scriptables;
 import jp.tonyu.servlet.ServerInfo;
 import jp.tonyu.servlet.ServletCartridge;
 import jp.tonyu.servlet.UI;
@@ -87,10 +91,11 @@ public class UploadCartridge implements ServletCartridge {
             resp.getWriter().println("invalid");
             return true;
         }
-        ProjectInfo.put(user, prj, title, desc, thumb, pubList, allowFork, license);
 
-        fs.get("/home/").rel(user+"/").rel(prj+"/").rel(RunScriptCartridge.CONCAT)
-        .text(prg);
+        GLSFile concat = fs.get("/home/").rel(user+"/").rel(prj+"/").rel(RunScriptCartridge.CONCAT);
+        concat.text(prg);
+        Scriptable s=concat.metaInfo();
+        ProjectInfo.put(user, prj, title, desc, thumb, pubList, allowFork, license,Scriptables.getAsString(s,GLSFile.KEY_DATASTORE_KEY ,""));
         resp.setContentType("text/plain; charset=utf8");
         String url=(req.getServerName().indexOf("localhost")>=0?
                 ServerInfo.tonyuexe_local : ServerInfo.tonyuexe_server
