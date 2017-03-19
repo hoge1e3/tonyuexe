@@ -1,4 +1,4 @@
-// Created at Sun Aug 21 2016 12:15:45 GMT+0900 (東京 (標準時))
+// Created at Thu Dec 22 2016 11:11:52 GMT+0900 (東京 (標準時))
 (function () {
 	var R={};
 	R.def=function (reqs,func,type) {
@@ -850,6 +850,10 @@ define(["PathUtil"], function (P) {
     } else {
         WebSite.wwwDir=location.protocol+"//"+location.host+"/";
         WebSite.projects=[P.rel(WebSite.tonyuHome,"Projects/")];
+    }
+    if (loc.match(/tonyuedit\.appspot\.com/) ||
+        loc.match(/localhost:888/)) {
+        WebSite.kernelDir=location.protocol+"//"+location.host+"/Kernel/";
     }
     if (loc.match(/tonyuedit\.appspot\.com/) ||
         loc.match(/localhost:888/) ||
@@ -3098,7 +3102,7 @@ return Tonyu=function () {
             bindFunc:bindFunc,not_a_tonyu_object:not_a_tonyu_object,
             hasKey:hasKey,invokeMethod:invokeMethod, callFunc:callFunc,checkNonNull:checkNonNull,
             run:run,iterator:IT,
-            VERSION:1471749335201,//EMBED_VERSION
+            VERSION:1482372694842,//EMBED_VERSION
             A:A};
 }();
 });
@@ -6644,10 +6648,31 @@ function annotateSource2(klass, env) {//B
         funcExpr: function (node) {/*FEIGNORE*/
             annotateSubFuncExpr(node);
         },
+        objlit:function (node) {
+            var t=this;
+            var dup={};
+            node.elems.forEach(function (e) {
+                var kn;
+                if (e.key.type=="literal") { 
+                    kn=e.key.text.substring(1,e.key.text.length-1);   
+                } else {
+                    kn=e.key.text;
+                }
+                if (dup[kn]) {
+                    throw TError( "オブジェクトリテラルのキー名'"+kn+"'が重複しています" , srcFile, e.pos);
+                } 
+                dup[kn]=1;
+                //console.log("objlit",e.key.text);
+                t.visit(e);
+            });
+        },
         jsonElem: function (node) {
             if (node.value) {
                 this.visit(node.value);
             } else {
+                if (node.key.type=="literal") { 
+                    throw TError( "オブジェクトリテラルのパラメタに単独の文字列は使えません" , srcFile, node.pos);
+                }
                 var si=getScopeInfo(node.key.text);
                 annotation(node,{scopeInfo:si});
             }
@@ -7691,7 +7716,9 @@ define(["PatternParser","Util","Assets","assert"], function (PP,Util,Assets,asse
             im.attr("src",url);
             function proc() {
                 var pw,ph;
-                if ((pw=resImg.pwidth) && (ph=resImg.pheight)) {
+                if (resImg.type=="single") {
+                    resa[i]=[{image:this, x:0,y:0, width:this.width, height:this.height}];
+                } else if ((pw=resImg.pwidth) && (ph=resImg.pheight)) {
                     var x=0, y=0, w=this.width, h=this.height;
                     var r=[];
                     while (true) {
@@ -8934,7 +8961,8 @@ var T2MediaLib = {
     	var ary = buffer.getChannelData(0);
     	var lam = Math.floor(myContext.sampleRate/860);
         for (var i = 0; i < ary.length; i++) {
-    	     ary[i] = (i % lam<lam/2?0.1:-0.1)*(i<lam?2:1) ;
+    	     //ary[i] = (i % lam<lam/2?0.1:-0.1)*(i<lam?2:1) ;
+    	     ary[i] = 0; // 無音化
     	}
         //console.log(ary);
 	    var source = myContext.createBufferSource();
@@ -9298,6 +9326,7 @@ define(["Util","exceptionCatcher"],function (Util, EC) {
             $edits.forEach(function (edit) {
                 $edits.writeToJq(edit.params.$edit, edit.jq);
             });
+            $edits.validator.on.validate.call($edits.validator, $edits.model);
         };
         $edits.writeToJq=function ($edit, jq) {
         	var m=$edits.model;
@@ -9574,15 +9603,28 @@ requirejs(["FS","Tonyu.Project","Shell","KeyEventChecker","ScriptTagFS",
             progress:function(t) {$("#splash").text(t);}
         };
 
+        function getMargin() {
+            var u = navigator.userAgent.toLowerCase();
+            if ((u.indexOf("iphone") != -1
+                || u.indexOf("ipad") != -1
+                || u.indexOf("ipod") != -1
+                ) && window != window.parent) {
+                return 5;
+            }
+            return 0;
+        }
+
+        var margin = getMargin();
         var w=$(window).width();
         var h=$(window).height();
         $("body").css({overflow:"hidden", margin:"0px"});
-        var cv=$("<canvas>").attr({width: w-10, height:h-10}).appendTo("body");
+        var cv=$("<canvas>").attr({width: w-margin, height: h-margin}).appendTo("body");
         $(window).resize(onResize);
         function onResize() {
+            var margin = getMargin();
             w=$(window).width();
             h=$(window).height();
-            cv.attr({width: w-10, height: h-10});
+            cv.attr({width: w-margin, height: h-margin});
         }
         var locs=location.href.replace(/\?.*/,"").split(/\//);
         var prj=locs.pop() || "runscript";
